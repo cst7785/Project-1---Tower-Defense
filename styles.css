@@ -7,7 +7,7 @@ body {
     width: 100vw;
     height: 100vh;
     background-color: gray;
-    display:grid;
+    display: grid;
     grid-template-columns: 1fr 5fr .5fr 12fr 1fr;
     grid-template-rows: 1fr 5fr .5fr 5fr 1fr;
     grid-template-areas: 
@@ -24,18 +24,53 @@ body {
 .game-menu {
     grid-area: game-menu;
     background-color: red;
+    display: grid;
+    grid-template-columns: 1fr 10fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-areas: 
+    ".      game-menu-header      ."
+    ".     game-menu-buttons      ."
+    ".    game-menu-scoreboard    .";
 }
-
+.game-menu-header {
+    grid-area: game-menu-header;
+    background-color:green;
+}
+.game-menu-buttons {
+    grid-area: game-menu-buttons;
+    background-color: blue;
+}
+.game-menu-scoreboard {
+    grid-area: game-menu-scoreboard;
+    background-color: purple;
+}
 .tower-menu {
     grid-area: tower-menu;
+    background-color: blue;
+    display: grid;
+    grid-template-columns: 1fr 10fr 1fr;
+    grid-template-rows: 1fr 4fr 1fr;
+    grid-template-areas: 
+    ".        tower-menu-header         ."
+    ".       tower-menu-buttons         ."
+    ".      tower-menu-scoreboard       .";
+}
+.tower-menu-header {
+    grid-area: tower-menu-header;
+    background-color: red;
+}
+.tower-menu-buttons {
+    grid-area: tower-menu-buttons;
     background-color: orange;
 }
-
+.tower-menu-scoreboard {
+    grid-area: tower-menu-scoreboard;
+    background-color: yellow;
+}
 .game-board {
     grid-area: game-board;
     background-color: yellow;
 }
-
 .footer {
     grid-area: footer;
     background-color: rgb(27, 145, 105);
