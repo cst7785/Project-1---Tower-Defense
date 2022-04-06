@@ -70,6 +70,16 @@ body {
 .game-board {
     grid-area: game-board;
     background-color: yellow;
+    display: relative;
+}
+.game-board-overlay {
+    grid-area: game-board;
+    display: grid; 
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+}
+.overlay-element {
+    border: 2px solid black;
 }
 .footer {
     grid-area: footer;
