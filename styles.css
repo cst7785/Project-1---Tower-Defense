@@ -1,0 +1,42 @@
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+body {
+    width: 100vw;
+    height: 100vh;
+    background-color: gray;
+    display:grid;
+    grid-template-columns: 1fr 5fr .5fr 12fr 1fr;
+    grid-template-rows: 1fr 5fr .5fr 5fr 1fr;
+    grid-template-areas: 
+    "header    header   header    header    header"
+    "  .     game-menu    .     game-board     .  "
+    "  .         .        .     game-board     .  "
+    "  .    tower-menu    .     game-board     .  "
+    "footer   footer    footer    footer    footer"
+}
+.header {
+    grid-area: header;
+    background-color: aqua;
+}
+.game-menu {
+    grid-area: game-menu;
+    background-color: red;
+}
+
+.tower-menu {
+    grid-area: tower-menu;
+    background-color: orange;
+}
+
+.game-board {
+    grid-area: game-board;
+    background-color: yellow;
+}
+
+.footer {
+    grid-area: footer;
+    background-color: rgb(27, 145, 105);
+}
