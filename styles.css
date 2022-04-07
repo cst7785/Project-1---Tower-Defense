@@ -6,10 +6,12 @@
 body {
     width: 100vw;
     height: 100vh;
-    background-color: gray;
+    background-image: url(https://eskipaper.com/images/castle-wallpapers-5.jpg);
+    background-position: center;
+    background-size: cover;
     display: grid;
     grid-template-columns: 1fr 5fr .5fr 12fr 1fr;
-    grid-template-rows: 1fr 5fr .5fr 5fr 1fr;
+    grid-template-rows: 1.5fr 5fr .5fr 5fr 1fr;
     grid-template-areas: 
     "header    header   header    header    header"
     "  .     game-menu    .     game-board     .  "
@@ -19,11 +21,16 @@ body {
 }
 .header {
     grid-area: header;
-    background-color: aqua;
+    /* background-color: aqua; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 .game-menu {
     grid-area: game-menu;
-    background-color: red;
+    background-color: lightgray;
+    border: 5px solid darkgray;
+    border-radius: 10%;
     display: grid;
     grid-template-columns: 1fr 10fr 1fr;
     grid-template-rows: 1fr 1fr 1fr;
@@ -34,19 +41,36 @@ body {
 }
 .game-menu-header {
     grid-area: game-menu-header;
-    background-color:green;
+    /* background-color:green; */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 .game-menu-buttons {
     grid-area: game-menu-buttons;
-    background-color: blue;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr;
+    /* background-color: blue; */
+    /* display: flex;
+    justify-content: space-around;
+    align-items: center; */
 }
 .game-menu-scoreboard {
     grid-area: game-menu-scoreboard;
-    background-color: purple;
+    /* background-color: purple; */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
 }
 .tower-menu {
     grid-area: tower-menu;
-    background-color: blue;
+    background-color: lightgray;
+    border: 5px solid darkgray;
+    border-radius: 10%;
+    /* background-color: blue; */
     display: grid;
     grid-template-columns: 1fr 10fr 1fr;
     grid-template-rows: 1fr 4fr 1fr;
@@ -57,31 +81,62 @@ body {
 }
 .tower-menu-header {
     grid-area: tower-menu-header;
-    background-color: red;
+    /* background-color: red; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 .tower-menu-buttons {
     grid-area: tower-menu-buttons;
-    background-color: orange;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    /* background-color: orange; */
 }
 .tower-menu-scoreboard {
     grid-area: tower-menu-scoreboard;
-    background-color: yellow;
+    /* background-color: yellow;s */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.game-board-underlay {
+    border-radius: 5%;
+    overflow: hidden;
+    grid-area: game-board;
+    display: grid; 
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+}
+
+.grass {
+    background-color: green;
+}
+.path {
+    background-color:tan;
+}
+.stone {
+    background: darkslategrey;
 }
 .game-board {
     grid-area: game-board;
-    background-color: yellow;
+    /* border: 10px solid lightgray; */
+    border-radius: 5%;
+    box-shadow: 0 0 0 7px darkgray;
     display: relative;
 }
 .game-board-overlay {
     grid-area: game-board;
+    overflow: hidden;
     display: grid; 
-    grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: repeat(5, 1fr);
+    border-radius: 5%;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
 }
 .overlay-element {
-    border: 2px solid black;
+    border: 1px solid black;
 }
 .footer {
     grid-area: footer;
-    background-color: rgb(27, 145, 105);
+    /* background-color: rgb(27, 145, 105); */
 }
