@@ -136,17 +136,32 @@ console.log(appView.activeUnits);
         //Tower Menu changes to About Game text;
         //Exit Menu button appears, cursor pointer, clicking on it changes state to Pregame Root Menu;
         //Stretch goal -> visual display of how to play the game, animated cursor clicks tower menu button, places tower, attacks creeps, loses life, upgrades tower
-    //**Click on Tower
+    //**Click on Tower Info
         //Tower Menu changes to About Tower text;
         //Exit menu button appears, cursor pointer, clicking on it changes state to PreGame Root Menu
+    //**New Game
+        //1 Minute timer starts, currency, lives, wave number, unit count all appear on the screen.
+        //Controller starts controller the sequence of spawning the first wave 
+        //Tower buttons become Clickable 
 //***Game***
     //**Game Root Menu
         //Hover over New Game -> Start a new game! Cursor pointer
         //Hover over Pause -> Pause the game. Cursor Pointer
         //Hover over About Game -> Learn about the game! Cursor Pointer
+        //Timer starts 
     //**About Game
         //Tower Menu changes to About Game text;
         //Exit Menu button appears, cursor pointer, clicking on it changes state to Pregame Root Menu;
     //**Pause Game
         //Stop automatic data calculations and rendering but keep the view and controller active to receive user queries
+        //Allows user to click on tower info to read and think without having the game update the positions and render 
         //Pressing resume game will return the game to the Game Root Menu
+    //**Tower Info
+        //Tower Menu changes to About Tower text;
+        //Exit menu button appears, cursor pointer, clicking on it changes state to Game Root Menu
+    //**Tower 
+        //Clicking on a tower makes it so that any available grid tile for construction will show respond with a visual cue such as changing color
+        //Clicking on an available grid tile will check if the user has enough currency, create a tower at that location, reduce the player currency and change state to Game Root Menu
+        //Pressing Escape or clicking cancel will change the state to Game Root Menu
+    //**Wave
+    //**Between Wave
