@@ -1,10 +1,10 @@
 class View {
     constructor(){
-        this.newGameButton = document.querySelector("new-game-button");
-        this.aboutGameButton = document.querySelector("about-game-button");
-        this.pauseButton = document.querySelector("pause-button");
-        this.circleTowerButton = document.querySelector("circle-tower-button");
-        this.circleTowerInfoButton = document.querySelector("circle-tower-info-button");
+        this.newGameButton = document.querySelector(".new-game-button");
+        this.aboutGameButton = document.querySelector(".about-game-button");
+        this.pauseGameButton = document.querySelector(".pause-game-button");
+        this.circleTowerButton = document.querySelector(".circle-tower-button");
+        this.circleTowerInfoButton = document.querySelector(".circle-tower-info-button");
         this.activeUnits = [];
         this.toRender = [];
     }
@@ -15,6 +15,29 @@ class View {
 }
 class Controller {
     constructor() {
+        this.newGameButtonHandlers = [
+            //this.newGameButtonHandlers.append(eventListenerX);
+            appView.newGameButton.addEventListener('click', ()=>{console.log("Clicked NEW game button")}), 
+            appView.newGameButton.addEventListener('mouseover', ()=>{console.log("Hovering over NEW game button")})
+        ];
+        this.aboutGameButtonHandlers = [
+            appView.aboutGameButton.addEventListener('click', ()=>{console.log("Clicked ABOUT game button")}), 
+            appView.aboutGameButton.addEventListener('mouseover', ()=>{console.log("Hovering over ABOUT game button")})
+        ];
+        this.pauseButtonHandlers = [
+            appView.pauseGameButton.addEventListener('click', ()=>{console.log("Clicked PAUSE game button")}), 
+            appView.pauseGameButton.addEventListener('mouseover', ()=>{console.log("Hovering over PAUSE game button")})
+        ];
+        this.circleTowerButtonHandlers = [
+            appView.circleTowerButton.addEventListener('click', ()=>{console.log("Clicked CIRCLE TOWER game button")}), 
+            appView.circleTowerButton.addEventListener('mouseover', ()=>{console.log("Hovering over CIRCLE TOWER game button")})
+        ];
+        this.circleTowerInfoButtonHandlers = [
+            appView.circleTowerInfoButton.addEventListener('click', ()=>{console.log("Clicked CIRCLE TOWER INFO game button")}), 
+            appView.circleTowerInfoButton.addEventListener('mouseover', ()=>{console.log("Hovering over CIRCLE TOWER INFO game button")})
+        ];
+
+
         this.clickableObjects = []; //array of event listener for each element handle on the website?
         this.userQueries = [];
     };
@@ -103,7 +126,7 @@ function render(){};
 // };
 let activeGame = true;
 const appView = new View();
-const appController = new Controller();
+const appController = new Controller(appView);
 const appData = new Data();
 // while (activeGame) {
 //     const loop = setInterval(mainLoop, 50); //tune the time value
