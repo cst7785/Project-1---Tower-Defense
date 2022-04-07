@@ -1,10 +1,21 @@
 class View {
     constructor(){
         this.activeUnits = [];
+        this.toRender = [];
     }
+    updateView() {
+        //
+    };
+    viewMainLoop(){};
 }
 class Controller {
     constructor() {
+        this.clickableObjects = []; //array of event listener for each element handle on the website?
+        this.userQueries = [];
+    };
+    controllerMainLoop() {
+    };
+    processUserRequests() {
 
     }
 }
@@ -13,6 +24,7 @@ class Data {
         this.playerUnits = [];
         this.enemyUnits = [];
     }
+    dataMainLoop(){};
 }
 class Motion {
     constructor() {
@@ -69,18 +81,31 @@ function moveDown() {
 //pseudocoding
 function init(){};
 function render(){};
-// goal is to have a game loop on interval
-function gameLoop(){
-    //process user input
-    //update data model
-    //render updates
-};
-const loop = setInterval(gameLoop, 50);
+
+//const loop = setInterval(gameLoop, 50);
 
 //create a wave class/object that creates a specified number of unit objects with the specified parameters
 //How to easily change properties of the unit such as health, armor, speed in between waves?
 
+
+
+// goal is to have a game loop on interval
+// create a game loop of self sufficient classes, each class has its own "loop" function
+// function mainLoop(){
+//     appController.controllerMainLoop();
+//     appData.dataMainLoop();
+//     appView.viewMainLoop();
+// };
+let activeGame = true;
 const appView = new View();
+const appController = new Controller();
+const appData = new Data();
+while (activeGame) {
+    mainLoop();
+}
+
+
+//experimenting with creating a wave and displaying it to the view
 currentWave = [];
 let numEnemies = 5;
 for (let i = 0; i < numEnemies; i++) {
@@ -90,3 +115,38 @@ for (let i = 0; i < numEnemies; i++) {
 console.log(currentWave);
 console.log(appView.activeUnits);
 
+//how does the user get from pressing New game to having the first enemy appear onscreen?
+//init function runs when webpage loads
+//created event listeners for each clickable object 
+//user clicks on new game
+//a timer starts and is displayed on screen, wave 1 appears, remaining lives appears, starting currency appears
+//a user can then click on towers within the tower menu 
+//
+
+//stretch goal -- save game / load game;
+
+//******States****** 
+//***Pregame***
+    //**PreGame Root Menu
+        //Hover over New Game -> Start a new game! Cursor pointer
+        //Hover over Pause -> nothing
+        //Hover over About Game -> Learn about the game! Cursor Pointer
+        //Hover over tower -> Basic Tower Description, Cursor Pointer
+    //**About Game
+        //Tower Menu changes to About Game text;
+        //Exit Menu button appears, cursor pointer, clicking on it changes state to Pregame Root Menu;
+        //Stretch goal -> visual display of how to play the game, animated cursor clicks tower menu button, places tower, attacks creeps, loses life, upgrades tower
+    //**Click on Tower
+        //Tower Menu changes to About Tower text;
+        //Exit menu button appears, cursor pointer, clicking on it changes state to PreGame Root Menu
+//***Game***
+    //**Game Root Menu
+        //Hover over New Game -> Start a new game! Cursor pointer
+        //Hover over Pause -> Pause the game. Cursor Pointer
+        //Hover over About Game -> Learn about the game! Cursor Pointer
+    //**About Game
+        //Tower Menu changes to About Game text;
+        //Exit Menu button appears, cursor pointer, clicking on it changes state to Pregame Root Menu;
+    //**Pause Game
+        //Stop automatic data calculations and rendering but keep the view and controller active to receive user queries
+        //Pressing resume game will return the game to the Game Root Menu
