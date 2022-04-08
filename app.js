@@ -8,43 +8,60 @@ class View {
         this.activeUnits = [];
         this.toRender = [];
     }
-    updateView() {
-        //
-    };
     viewMainLoop(){};
+    clickNewGame() {
+        appController.eventList.push("new-game-clicked");
+        // console.log("Clicked new game")
+    }
 }
 class Controller {
     constructor() {
+        const states = [
+            "pre-game-root", 
+            "about-game-clicked", 
+            "pause-button-clicked", 
+            "circle-tower-clicked", 
+            "circle-tower-info-clicked",
+            "pre-wave",
+            "wave",
+            "game-over"];
+        this.state="pre-game-root";
+        this.eventList = [];
         this.newGameButtonHandlers = [
-            //this.newGameButtonHandlers.append(eventListenerX);
-            appView.newGameButton.addEventListener('click', ()=>{console.log("Clicked NEW game button")}), 
-            appView.newGameButton.addEventListener('mouseover', ()=>{console.log("Hovering over NEW game button")})
+            appView.newGameButton.addEventListener('click', ()=>{this.eventList.push("new-game-clicked")}), 
+            appView.newGameButton.addEventListener('mouseover', ()=>{this.eventList.push("new-game-hover")})
         ];
-        this.aboutGameButtonHandlers = [
+        appView.aboutGameButtonHandlers = [
             appView.aboutGameButton.addEventListener('click', ()=>{console.log("Clicked ABOUT game button")}), 
             appView.aboutGameButton.addEventListener('mouseover', ()=>{console.log("Hovering over ABOUT game button")})
         ];
-        this.pauseButtonHandlers = [
+        appView.pauseButtonHandlers = [
             appView.pauseGameButton.addEventListener('click', ()=>{console.log("Clicked PAUSE game button")}), 
             appView.pauseGameButton.addEventListener('mouseover', ()=>{console.log("Hovering over PAUSE game button")})
         ];
-        this.circleTowerButtonHandlers = [
+        appView.circleTowerButtonHandlers = [
             appView.circleTowerButton.addEventListener('click', ()=>{console.log("Clicked CIRCLE TOWER game button")}), 
             appView.circleTowerButton.addEventListener('mouseover', ()=>{console.log("Hovering over CIRCLE TOWER game button")})
         ];
-        this.circleTowerInfoButtonHandlers = [
+        appView.circleTowerInfoButtonHandlers = [
             appView.circleTowerInfoButton.addEventListener('click', ()=>{console.log("Clicked CIRCLE TOWER INFO game button")}), 
             appView.circleTowerInfoButton.addEventListener('mouseover', ()=>{console.log("Hovering over CIRCLE TOWER INFO game button")})
         ];
-
-
-        this.clickableObjects = []; //array of event listener for each element handle on the website?
-        this.userQueries = [];
     };
     controllerMainLoop() {
+        this.processEvents();
     };
-    processUserRequests() {
-
+    processEvents() {
+        for (let i = 0; i < this.eventList.length; i++) {
+            switch(this.eventList.shift()) {
+                case "new-game-clicked":
+                    console.log("New Game Button Clicked");
+                    break;
+                case "new-game-hover":
+                    console.log("New Game Button Hovered");
+                    break;
+            }
+        }   
     }
 }
 class Data {
@@ -119,18 +136,16 @@ function render(){};
 
 // goal is to have a game loop on interval
 // create a game loop of self sufficient classes, each class has its own "loop" function
-// function mainLoop(){
-//     appController.controllerMainLoop();
-//     appData.dataMainLoop();
-//     appView.viewMainLoop();
-// };
+function mainLoop(){
+    appController.controllerMainLoop();
+    appData.dataMainLoop();
+    appView.viewMainLoop();
+};
 let activeGame = true;
 const appView = new View();
-const appController = new Controller(appView);
+const appController = new Controller();
 const appData = new Data();
-// while (activeGame) {
-//     const loop = setInterval(mainLoop, 50); //tune the time value
-// }
+const loop = setInterval(mainLoop, 50); //tune the time value
 
 
 //experimenting with creating a wave and displaying it to the view
@@ -209,3 +224,5 @@ for (let i = 0; i < numEnemies; i++) {
         //The wave number increments and the unit count adjusts to that of the next wave
         //Enemies stop spawning
         //Possibly clear controller and data? If well designed, should be redundant?
+    //**Game Over
+    
