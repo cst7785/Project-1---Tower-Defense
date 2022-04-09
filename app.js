@@ -10,7 +10,11 @@ class View {
         this.livesRemainingField = document.querySelector(".lives-remaining-field");
         this.currencyField = document.querySelector(".currency-field");
         this.gameBoard = document.querySelector(".game-board");
-        console.log(this.gameBoard)
+        console.log(this.gameBoard.children)
+        console.log(this.gameBoard.children.length)
+ 
+        console.log(this.gameBoard);
+        console.log(this.gameBoard.children)//.forEach(element => console.log(element)))
         this.newGameButtonHandlers = [
             this.newGameButton.addEventListener('click', ()=>{appController.eventList.push("new-game-clicked")}), 
             this.newGameButton.addEventListener('mouseover', ()=>{appController.eventList.push("new-game-hover")})
@@ -34,6 +38,15 @@ class View {
         this.windowEventHandlers = [
             window.onresize = this.updateSizes
         ];
+        this.activeUnits = [];
+        this.toRender = [];
+    }
+    reset() {
+        length = this.gameBoard.children.length;
+        for (let i = 0; i < length; i++) {
+            // console.log(`Run ${1+i}`)
+            this.gameBoard.children[0].remove();
+        }
         this.activeUnits = [];
         this.toRender = [];
     }
@@ -106,6 +119,7 @@ class Controller {
             "game-over"];
         this.state="pre-game-root";
         this.eventList = [];
+        this.timeOuts = [];
     };
     controllerMainLoop() {
         this.processEvents();
@@ -162,10 +176,20 @@ class Controller {
             }
         }   
     }
+    reset() {
+        console.log(this.timeOuts)
+        let length = this.timeOuts.length;
+        for (let i = 0; i < length; i++) {
+            clearTimeout(this.timeOuts[i]);
+        }
+    }
     //uses a set keyword
     setNewGameState() {
         console.log("Starting new game")
         //clear data model and view
+        appController.reset();
+        appView.reset();
+        appData.reset();
         this.setScoreBoard();
         this.setCurrency();
         this.setState("pre-wave");
@@ -181,10 +205,12 @@ class Controller {
         this.setScoreBoard();
         let timeOut = 0;
         for (let i = 0; i < appData.units; i++) {
-            setTimeout(this.setNewUnit, timeOut);
+            let generator = setTimeout(this.setNewUnit, timeOut);
+            // console.log(`The timeout ID is ${generator}`);
+            this.timeOuts.push(generator);
             timeOut += 2000;
         }
-        setTimeout(console.log(appView.activeUnits), timeOut);
+        let generator = setTimeout(console.log(appView.activeUnits), timeOut);
     }
     setScoreBoard() {
         //has shape wave unit lives timer
@@ -249,9 +275,9 @@ class Data {
                     // console.log("this.time = 0")
                     this.getTimer("stop");
                 } else {
+                    this.getTimer("update");
                     this.timer--;
                     // console.log(this.timer);
-                    this.getTimer("update");
                 }
             } else {
                 // console.log("Timer not active")
@@ -262,9 +288,21 @@ class Data {
         this.playerUnits = [];
         this.enemyUnits = [];
     }
+    reset() {
+        this.wave = 1;
+        this.units = 3;
+        this.lives = 30;
+        this.timer = 2;
+        this.timerActive = false;
+        this.currency = 100;
+        this.addIncome = 50;
+        this.playerUnits = [];
+        this.enemyUnits = [];
+    }
     //uses a get keyword
     dataMainLoop(){
-        this.getNewEnemyPositions();
+        // console.log('Data main loop')
+        this.getNewEnemyPositions();  
     };
     getScoreBoardData() {
         // console.log("Getting data...")
@@ -278,7 +316,7 @@ class Data {
     getTimer(startStopUpdate) {
         switch (startStopUpdate) {
             case "start":
-                // this.timer = 10;
+                this.timer = 3;
                 this.timerActive = true;
                 break;
             case "stop":
@@ -292,7 +330,7 @@ class Data {
         return this.timer;
     }
     getNewUnit() {
-        const newUnit = new Unit ("test-unit");
+        const newUnit = new Unit (this.wave, this.enemyUnits.length + 1);
         this.enemyUnits.push(newUnit);
         return newUnit;
     }
@@ -300,13 +338,25 @@ class Data {
         for (let i = 0; i < this.enemyUnits.length; i++) {
             const unitObj = this.enemyUnits[i];
             // console.log("Calculating new positions...")
-            unitObj.motion.calculateNewPosition();
+            unitObj.motion.calculateNewPosition();               
+            if (this.enemyUnits[i].motion.coords[1] >= appData.getBoardDimensions()[1]) {
+                console.log("This section runs.")
+                this.enemyUnits.shift();
+                this.getLives(-1);         
         }
-    };
+    }
+}
     getBoardDimensions() {
         const gameBoardWidth = appView.gameBoard.offsetWidth;
         const gameBoardHeight = appView.gameBoard.offsetHeight;
         return [gameBoardWidth, gameBoardHeight]
+    }
+    getLives(change=0) {
+        if (change != 0) {
+            this.lives += change;
+            appController.setScoreBoard("lives", this.getScoreBoardData());
+        }
+        return this.lives;
     }
 }
 class Motion {
@@ -326,16 +376,25 @@ class Motion {
     }
 }
 class Unit {
-    constructor(name) {
-        this.name = name;
+    constructor(waveNumber, unitNumber) {
+        this.name = `wave${waveNumber}-unit${unitNumber}`;
         this.health = 100;
         this.size = [0.05 * appView.gameBoard.offsetWidth, 0.1 * appView.gameBoard.offsetHeight]; // percentage of game board
         this.originOffset = [-0.5*this.size[0], -0.5*this.size[1]]; 
+        this.style();
+        this.motion = new Motion(this.originOffset);
+    }
+    style() {
         this.domHandle = document.createElement("div");
         this.domHandle.classList.add(`${this.name}`);
         this.domHandle.style.width = `${this.size[0]}px`;
         this.domHandle.style.height = `${this.size[1]}px`;
-        this.motion = new Motion(this.originOffset);
+        this.domHandle.style.position = "absolute";
+        this.domHandle.style.backgroundColor = "blue";
+        this.domHandle.style.borderRadius = "50%";
+        this.domHandle.style.left = `${appData.getBoardDimensions()[1]/2}px`;
+        this.domHandle.style.top = `${appData.getBoardDimensions()[1] * -0.1}px`;
+        // this.domHandle.style.boxShadow = `0 -5px 5px blue`
     }
     resize() {
         // console.log("Resizing...")
