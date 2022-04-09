@@ -310,9 +310,10 @@ class Data {
     }
 }
 class Motion {
-    constructor() {
+    constructor(offset) {
         this.boardDimensions = appData.getBoardDimensions();
-        this.coords= [this.boardDimensions[0] / 2, this.boardDimensions[1] * -0.1]; //vector
+        //TODO change the initial coords to be in constructor
+        this.coords= [offset[0] + (this.boardDimensions[0] / 2), offset[1]+(this.boardDimensions[1] * -0.1)]; //vector
         this.speed = this.boardDimensions[1] * .009  ; //magnitude
         this.direction = [0, 1]; //unit vector
     }
@@ -328,19 +329,23 @@ class Unit {
     constructor(name) {
         this.name = name;
         this.health = 100;
-        this.motion = new Motion();
+        this.size = [0.05 * appView.gameBoard.offsetWidth, 0.1 * appView.gameBoard.offsetHeight]; // percentage of game board
+        this.originOffset = [-0.5*this.size[0], -0.5*this.size[1]]; 
         this.domHandle = document.createElement("div");
         this.domHandle.classList.add(`${this.name}`);
-        this.resize();
+        this.domHandle.style.width = `${this.size[0]}px`;
+        this.domHandle.style.height = `${this.size[1]}px`;
+        this.motion = new Motion(this.originOffset);
     }
     resize() {
-        console.log("Resizing...")
+        // console.log("Resizing...")
         let oldBoardDimensions = this.motion.boardDimensions;
         this.motion.boardDimensions = appData.getBoardDimensions();
+        this.size = [0.05 * appView.gameBoard.offsetWidth, 0.1 * appView.gameBoard.offsetHeight]; // percentage of game board
         this.motion.coords= [this.motion.boardDimensions[0]*this.motion.coords[0]/oldBoardDimensions[0], this.motion.boardDimensions[1]*this.motion.coords[1]/oldBoardDimensions[1]]; //vector
-        this.motion.speed = appView.gameBoard.offsetHeight * .009  ; //magnitude
-        this.domHandle.style.width = `${appView.gameBoard.offsetWidth * .05}px`;
-        this.domHandle.style.height = `${appView.gameBoard.offsetHeight * .1}px`;
+        this.motion.speed = appView.gameBoard.offsetHeight * .009  ;
+        this.domHandle.style.width = `${this.size[0]}px`;
+        this.domHandle.style.height = `${this.size[1]}px`;
     }
 }
 class Tower {
