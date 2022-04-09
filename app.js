@@ -10,6 +10,8 @@ class View {
         this.livesRemainingField = document.querySelector(".lives-remaining-field");
         this.currencyField = document.querySelector(".currency-field");
         this.gameBoard = document.querySelector(".game-board");
+        this.gameBoardOverlay = document.querySelector(".game-board-overlay")
+        this.gameBoardOverlayElements = document.querySelectorAll(".overlay-element")
         // console.log(this.gameBoard.children)
         // console.log(this.gameBoard.children.length)
  
@@ -38,8 +40,18 @@ class View {
         this.windowEventHandlers = [
             window.onresize = this.updateSizes
         ];
+        this.gameBoardOverlayElements.forEach(element => {
+            element.addEventListener('mouseenter',this.testFunc)
+            element.addEventListener('mouseout',this.testFunc)
+        })
+        this.gameBoard.addEventListener('click', this.testFunc2);
         this.activeUnits = [];
         this.toRender = [];
+    }
+    testFunc() {
+        let restrictedTiles = ["path", "stone"]
+        if (!event.target.classList.contains("restricted")) { 
+            event.target.classList.toggle("highlight") }
     }
     reset() {
         length = this.gameBoard.children.length;
@@ -125,6 +137,7 @@ class Controller {
     controllerMainLoop() {
         // console.log("Controller main loop")
         this.processEvents();
+        this.processState();
     };
     setState(stateString) {
         this.eventList.push(stateString);
@@ -177,6 +190,8 @@ class Controller {
             console.log(this.eventList);
             }
         }
+    }
+    processState() {
         //this code needs to run on each loop of the state
         switch (this.state) {
             case "pre-wave":
@@ -195,6 +210,8 @@ class Controller {
         for (let i = 0; i < length; i++) {
             clearTimeout(this.timeOuts[i]);
         }
+        this.timeOuts = [];
+        this.state = "pre-game-root";
     }
     //uses a set keyword
     setNewGameState() {
@@ -203,9 +220,9 @@ class Controller {
         appController.reset();
         appView.reset();
         appData.reset();
+        this.setState("pre-wave");
         this.setScoreBoard();
         this.setCurrency();
-        this.setState("pre-wave");
     }
     setPreWaveState() {
         this.state = "pre-wave";
@@ -220,17 +237,20 @@ class Controller {
                 this.setScoreBoard();
                 let timeOut = 0;
                 for (let i = 0; i < appData.units; i++) {
-                    let generator = setTimeout(this.setNewUnit, timeOut);
+                    this.timeOuts.push(setTimeout(this.setNewUnit, timeOut));
                     // console.log(`The timeout ID is ${generator}`);
-                    this.timeOuts.push(generator);
+                    // this.timeOuts.push(generator);
                     timeOut += 2000;
                 }
-                setTimeout(console.log(appView.activeUnits), timeOut);
+                console.log(this.timeOuts);
+                setTimeout(console.log(appView.activeUnits), timeOut+2000);
                 break;
             case "check":
                 // console.log(appData.enemyUnits)
                 // console.log(appData.enemyUnits.length)
                 // console.log(this.timeOuts.length)
+                console.log(`Enemy units: ${appData.enemyUnits.length}`)
+                console.log(`Timeouts: ${this.timeOuts.length}`)
                 if (appData.enemyUnits.length === 0 && this.timeOuts.length === 0) {
                     console.log("NO more enemies!")
                     this.setWaveState("next");
@@ -314,7 +334,7 @@ class Data {
                 // console.log("Timer not active")
             }
         }, 1000);
-        this.currency = 100;
+        this.currency = 50;
         this.income = 50;
         this.playerUnits = [];
         this.enemyUnits = [];
@@ -325,7 +345,7 @@ class Data {
         this.lives = 30;
         this.timer = appController.timerValue;
         this.timerActive = false;
-        this.currency = 100;
+        this.currency = 50;
         this.income = 50;
         this.playerUnits = [];
         this.enemyUnits = [];
@@ -384,7 +404,7 @@ class Data {
             }
             //check if enemies have left the board due to health
             else if (unitObj.health <= 0) {
-                this.getCurrency(unitObj.bounty)
+                appController.setCurrency(unitObj.bounty)
                 this.enemyUnits.splice(this.enemyUnits.indexOf(unitObj),1);
                 appView.activeUnits.splice(appView.activeUnits.indexOf(unitObj));
                 unitObj.domHandle.remove();
@@ -448,6 +468,7 @@ class Unit {
         this.domHandle.style.borderRadius = "50%";
         this.domHandle.style.left = `${appData.getBoardDimensions()[1]/2}px`;
         this.domHandle.style.top = `${appData.getBoardDimensions()[1] * -0.1}px`;
+        this.domHandle.addEventListener('click',()=>{this.health -= 55});
         // this.domHandle.style.boxShadow = `0 -5px 5px blue`
     }
     resize() {
@@ -475,15 +496,18 @@ function setTerrain() {
     const pathTiles = [4,5,14,15,24,25,34,35,44,45,54,55,64,65,74,75,84,85,94,95];
     const stoneTiles = [90,91,92,93,96,97,98,99];
     const underLayElements = document.querySelector(".game-board-underlay").children;
+    const overLayElements = document.querySelector(".game-board-overlay").children;
     for (let i = 0; i < 100; i++) {
         if (pathTiles.includes(i)) {
             underLayElements[i].classList.toggle("path");
+            overLayElements[i].classList.toggle("restricted")
         }
         else if (stoneTiles.includes(i)) {
             underLayElements[i].classList.toggle("stone");
+            overLayElements[i].classList.toggle("restricted")
         } else {
             underLayElements[i].classList.toggle("grass");
-        }
+        }   
     }
 }
 setTerrain();

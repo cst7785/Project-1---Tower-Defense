@@ -169,13 +169,23 @@ body {
     grid-template-rows: repeat(10, 1fr);
 }
 .overlay-element {
+    /* background: red; */
+    z-index: 1;
+    /* border: 1px solid black; */
+}
+.overlay-border {
     border: 1px solid black;
 }
 .footer {
     grid-area: footer;
     /* background-color: rgb(27, 145, 105); */
 }
-
+.restricted {
+    border: none;
+}
+.highlight {
+    background-color: blue;
+}
 
 
 /* Buttons */
