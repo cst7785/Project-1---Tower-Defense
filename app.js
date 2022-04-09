@@ -5,13 +5,57 @@ class View {
         this.pauseGameButton = document.querySelector(".pause-game-button");
         this.circleTowerButton = document.querySelector(".circle-tower-button");
         this.circleTowerInfoButton = document.querySelector(".circle-tower-info-button");
+        // this.scoreBoard = document.querySelector(".game-menu-scoreboard");
+        this.waveNumberField = document.querySelector(".wave-number-field");
+        this.livesRemainingField = document.querySelector(".lives-remaining-field");
+        this.currencyField = document.querySelector(".currency-field");
+        this.newGameButtonHandlers = [
+            this.newGameButton.addEventListener('click', ()=>{appController.eventList.push("new-game-clicked")}), 
+            this.newGameButton.addEventListener('mouseover', ()=>{appController.eventList.push("new-game-hover")})
+        ];
+        this.aboutGameButtonHandlers = [
+            this.aboutGameButton.addEventListener('click', ()=>{appController.eventList.push("about-game-clicked")}), 
+            this.aboutGameButton.addEventListener('mouseover', ()=>{appController.eventList.push("about-game-hover")})
+        ];
+        this.pauseButtonHandlers = [
+            this.pauseGameButton.addEventListener('click', ()=>{appController.eventList.push("pause-game-clicked")}), 
+            this.pauseGameButton.addEventListener('mouseover', ()=>{appController.eventList.push("pause-game-hover")})
+        ];
+        this.circleTowerButtonHandlers = [
+            this.circleTowerButton.addEventListener('click', ()=>{appController.eventList.push("circle-tower-clicked")}), 
+            this.circleTowerButton.addEventListener('mouseover', ()=>{appController.eventList.push("circle-tower-hover")})
+        ];
+        this.circleTowerInfoButtonHandlers = [
+            this.circleTowerInfoButton.addEventListener('click', ()=>{appController.eventList.push("circle-tower-info-clicked")}), 
+            this.circleTowerInfoButton.addEventListener('mouseover', ()=>{appController.eventList.push("circle-tower-info-hover")})
+        ];
         this.activeUnits = [];
         this.toRender = [];
     }
+    //uses an update keyword
     viewMainLoop(){};
     clickNewGame() {
         appController.eventList.push("new-game-clicked");
         // console.log("Clicked new game")
+    }
+    updateScoreBoard(type, [wave, unitsOrTime, lives]) {
+        console.log("Updating Scoreboard");
+        let waveNumberFieldString;
+        switch (type) {
+            case "units":
+                waveNumberFieldString = `Wave: ${wave} Units: ${unitsOrTime}`;
+                break;
+            case "timer":
+                waveNumberFieldString = `Wave: ${wave} Timer: ${unitsOrTime}`;
+                break;
+        }
+        const livesRemainingString = `Lives remaining: ${lives}`;
+        this.waveNumberField.innerText = waveNumberFieldString;
+        this.livesRemainingField.innerText = livesRemainingString;
+    }
+    updateCurrency(amount) {
+        const currencyFieldString = `Currency: ${amount}`
+        this.currencyField.innerText = currencyFieldString;
     }
 }
 class Controller {
@@ -27,49 +71,178 @@ class Controller {
             "game-over"];
         this.state="pre-game-root";
         this.eventList = [];
-        this.newGameButtonHandlers = [
-            appView.newGameButton.addEventListener('click', ()=>{this.eventList.push("new-game-clicked")}), 
-            appView.newGameButton.addEventListener('mouseover', ()=>{this.eventList.push("new-game-hover")})
-        ];
-        appView.aboutGameButtonHandlers = [
-            appView.aboutGameButton.addEventListener('click', ()=>{console.log("Clicked ABOUT game button")}), 
-            appView.aboutGameButton.addEventListener('mouseover', ()=>{console.log("Hovering over ABOUT game button")})
-        ];
-        appView.pauseButtonHandlers = [
-            appView.pauseGameButton.addEventListener('click', ()=>{console.log("Clicked PAUSE game button")}), 
-            appView.pauseGameButton.addEventListener('mouseover', ()=>{console.log("Hovering over PAUSE game button")})
-        ];
-        appView.circleTowerButtonHandlers = [
-            appView.circleTowerButton.addEventListener('click', ()=>{console.log("Clicked CIRCLE TOWER game button")}), 
-            appView.circleTowerButton.addEventListener('mouseover', ()=>{console.log("Hovering over CIRCLE TOWER game button")})
-        ];
-        appView.circleTowerInfoButtonHandlers = [
-            appView.circleTowerInfoButton.addEventListener('click', ()=>{console.log("Clicked CIRCLE TOWER INFO game button")}), 
-            appView.circleTowerInfoButton.addEventListener('mouseover', ()=>{console.log("Hovering over CIRCLE TOWER INFO game button")})
-        ];
     };
     controllerMainLoop() {
         this.processEvents();
     };
+    setState(stateString) {
+        this.eventList.push(stateString);
+    }
     processEvents() {
         for (let i = 0; i < this.eventList.length; i++) {
+            console.log(this.eventList);
             switch(this.eventList.shift()) {
+                //Button Interactions
                 case "new-game-clicked":
                     console.log("New Game Button Clicked");
+                    this.setNewGameState();
                     break;
                 case "new-game-hover":
                     console.log("New Game Button Hovered");
                     break;
+                case "about-game-clicked":
+                    console.log("About Game Button Clicked");
+                    break;
+                case "about-game-hover":
+                    console.log("About Game Button Hovered");
+                    break;
+                case "pause-game-clicked":
+                    console.log("Pause Game Button Clicked");
+                    break;
+                case "pause-game-hover":
+                    console.log("Pause Game Button Hovered");
+                    break;
+                case "circle-tower-clicked":
+                    console.log("Circle Tower Button Clicked");
+                    break;
+                case "circle-tower-hover":
+                    console.log("Circle Tower Button Hovered");
+                    break;
+                case "circle-tower-info-clicked":
+                    console.log("Circle Tower Info Button Clicked");
+                    break;
+                case "circle-tower-info-hover":
+                    console.log("Circle Tower Info Button Hovered");
+                    break;
+                //State Changes
+                case "pre-wave":
+                    console.log(`Changing state to pre-wave`);
+                    this.setPreWaveState();
+                    break;
+                case "wave":
+                    console.log(`Changing state to wave`);
+                    this.setWaveState();
+                    break;
+            console.log(this.eventList);
             }
         }   
+    }
+    //uses a set keyword
+    setNewGameState() {
+        console.log("Starting new game")
+        //clear data model and view
+        this.setScoreBoard();
+        this.setCurrency();
+        this.setState("pre-wave");
+    }
+    setPreWaveState() {
+        this.state = "pre-wave";
+        this.setScoreBoard();
+        this.setCurrency(appData.addIncome); 
+        this.setTimer("start");
+    }
+    setWaveState() {
+        this.state = "wave";
+        this.setScoreBoard();
+    }
+    setScoreBoard() {
+        //has shape wave unit lives timer
+        const scoreBoardData = appData.getScoreBoardData();
+        let formattedData;
+        switch (this.state) {
+            case "pre-game-root":
+                //TODO figure out how to remove duplication here
+                //wave timer lives
+                formattedData = [scoreBoardData[0], scoreBoardData[3], scoreBoardData[2]]
+                return appView.updateScoreBoard("timer", formattedData);
+                break;
+            case "pre-wave":
+                //wave timer lives
+                formattedData = [scoreBoardData[0], scoreBoardData[3], scoreBoardData[2]]
+                return appView.updateScoreBoard("timer", formattedData);
+                break;
+            case "wave":
+                //wave unit lives
+                formattedData = [scoreBoardData[0], scoreBoardData[1], scoreBoardData[2]]
+                return appView.updateScoreBoard("units", formattedData);
+                break;
+        }
+    }
+    setCurrency(currencyChange=0) {
+        const currencyData = appData.getCurrency(currencyChange);
+        appView.updateCurrency(currencyData);
+    }
+    setTimer(startStopUpdate){    
+        switch (startStopUpdate) {
+            case "start": 
+                console.log("Setting the timer...");
+                appData.getTimer("start");
+                break;
+            case "update":
+                console.log("Updating the timer...");
+                appView.updateTimer();
+            case "stop":
+                console.log("Stopping the timer");
+                this.setState("wave")
+        }
+        appData.getTimer();
     }
 }
 class Data {
     constructor() {
+        this.wave = 1;
+        this.units = 10;
+        this.lives = 30;
+        this.timer = 5;
+        this.timerActive = false;
+        this.timerInterval = setInterval(() => {
+            console.log(this.timerActive);
+            if (this.timerActive) {
+                if (this.timer === 0) {
+                    this.timerActive = false;
+                    console.log("this.time = 0")
+                    this.getTimer("stop");
+                } else {
+                    this.timer--;
+                    console.log(this.timer);
+                    this.getTimer("update");
+                }
+            } else {
+                console.log("Timer not active")
+            }
+        }, 1000);
+        this.currency = 100;
+        this.addIncome = 50;
         this.playerUnits = [];
         this.enemyUnits = [];
     }
+    //uses a get keyword
     dataMainLoop(){};
+    getScoreBoardData() {
+        console.log("Getting data...")
+        const scoreBoardData = [this.wave, this.units, this.lives, this.timer];
+        return scoreBoardData; 
+    }
+    getCurrency(currencyChange = 0) {
+        this.currency += currencyChange;
+        return this.currency;
+    }
+    getTimer(startStopUpdate) {
+        switch (startStopUpdate) {
+            case "start":
+                // this.timer = 10;
+                this.timerActive = true;
+                break;
+            case "stop":
+                this.timerActive = false;
+                appController.setTimer("stop");
+            case "update":
+                appController.setScoreBoard();
+            case "default":
+                break;
+        }
+        return this.timer;
+    }
 }
 class Motion {
     constructor() {
