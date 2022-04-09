@@ -10,11 +10,11 @@ class View {
         this.livesRemainingField = document.querySelector(".lives-remaining-field");
         this.currencyField = document.querySelector(".currency-field");
         this.gameBoard = document.querySelector(".game-board");
-        console.log(this.gameBoard.children)
-        console.log(this.gameBoard.children.length)
+        // console.log(this.gameBoard.children)
+        // console.log(this.gameBoard.children.length)
  
-        console.log(this.gameBoard);
-        console.log(this.gameBoard.children)//.forEach(element => console.log(element)))
+        // console.log(this.gameBoard);
+        // console.log(this.gameBoard.children)//.forEach(element => console.log(element)))
         this.newGameButtonHandlers = [
             this.newGameButton.addEventListener('click', ()=>{appController.eventList.push("new-game-clicked")}), 
             this.newGameButton.addEventListener('mouseover', ()=>{appController.eventList.push("new-game-hover")})
@@ -120,8 +120,10 @@ class Controller {
         this.state="pre-game-root";
         this.eventList = [];
         this.timeOuts = [];
+        this.timerValue = 3;
     };
     controllerMainLoop() {
+        // console.log("Controller main loop")
         this.processEvents();
     };
     setState(stateString) {
@@ -170,14 +172,25 @@ class Controller {
                     break;
                 case "wave":
                     console.log(`Changing state to wave`);
-                    this.setWaveState();
+                    this.setWaveState("new");
                     break;
             console.log(this.eventList);
             }
+        }
+        //this code needs to run on each loop of the state
+        switch (this.state) {
+            case "pre-wave":
+                // console.log("Running this switch pre-wave")
+                break;
+            case "wave":
+                // console.log("Running this switch")
+                this.setWaveState("check")
+                break;
         }   
     }
     reset() {
-        console.log(this.timeOuts)
+        this.eventList = [];
+        // console.log(this.timeOuts)
         let length = this.timeOuts.length;
         for (let i = 0; i < length; i++) {
             clearTimeout(this.timeOuts[i]);
@@ -197,20 +210,37 @@ class Controller {
     setPreWaveState() {
         this.state = "pre-wave";
         this.setScoreBoard();
-        this.setCurrency(appData.addIncome); 
+        this.setCurrency(appData.income); 
         this.setTimer("start");
     }
-    setWaveState() {
-        this.state = "wave";
-        this.setScoreBoard();
-        let timeOut = 0;
-        for (let i = 0; i < appData.units; i++) {
-            let generator = setTimeout(this.setNewUnit, timeOut);
-            // console.log(`The timeout ID is ${generator}`);
-            this.timeOuts.push(generator);
-            timeOut += 2000;
+    setWaveState(condition) {
+        switch (condition) {
+            case "new":
+                this.state = "wave";
+                this.setScoreBoard();
+                let timeOut = 0;
+                for (let i = 0; i < appData.units; i++) {
+                    let generator = setTimeout(this.setNewUnit, timeOut);
+                    // console.log(`The timeout ID is ${generator}`);
+                    this.timeOuts.push(generator);
+                    timeOut += 2000;
+                }
+                setTimeout(console.log(appView.activeUnits), timeOut);
+                break;
+            case "check":
+                // console.log(appData.enemyUnits)
+                // console.log(appData.enemyUnits.length)
+                // console.log(this.timeOuts.length)
+                if (appData.enemyUnits.length === 0 && this.timeOuts.length === 0) {
+                    console.log("NO more enemies!")
+                    this.setWaveState("next");
+                    this.setState("pre-wave");
+                }
+                break;
+            case "next":
+                //increment the wave number
+                appData.getWave("next")
         }
-        let generator = setTimeout(console.log(appView.activeUnits), timeOut);
     }
     setScoreBoard() {
         //has shape wave unit lives timer
@@ -252,7 +282,7 @@ class Controller {
                 // console.log("Stopping the timer");
                 this.setState("wave")
         }
-        appData.getTimer();
+        // appData.getTimer();
     }
     setNewUnit() {
         //create the units data
@@ -265,12 +295,13 @@ class Data {
         this.wave = 1;
         this.units = 3;
         this.lives = 30;
-        this.timer = 2;
+        this.timer = appController.timerValue;
         this.timerActive = false;
         this.timerInterval = setInterval(() => {
             // console.log(this.timerActive);
             if (this.timerActive) {
-                if (this.timer === 0) {
+                if (this.timer === -1) {
+                    this.timer = 0;
                     this.timerActive = false;
                     // console.log("this.time = 0")
                     this.getTimer("stop");
@@ -284,7 +315,7 @@ class Data {
             }
         }, 1000);
         this.currency = 100;
-        this.addIncome = 50;
+        this.income = 50;
         this.playerUnits = [];
         this.enemyUnits = [];
     }
@@ -292,10 +323,10 @@ class Data {
         this.wave = 1;
         this.units = 3;
         this.lives = 30;
-        this.timer = 2;
+        this.timer = appController.timerValue;
         this.timerActive = false;
         this.currency = 100;
-        this.addIncome = 50;
+        this.income = 50;
         this.playerUnits = [];
         this.enemyUnits = [];
     }
@@ -316,7 +347,7 @@ class Data {
     getTimer(startStopUpdate) {
         switch (startStopUpdate) {
             case "start":
-                this.timer = 3;
+                this.timer = appController.timerValue;
                 this.timerActive = true;
                 break;
             case "stop":
@@ -332,20 +363,41 @@ class Data {
     getNewUnit() {
         const newUnit = new Unit (this.wave, this.enemyUnits.length + 1);
         this.enemyUnits.push(newUnit);
+        appController.timeOuts.shift();
         return newUnit;
     }
     getNewEnemyPositions(){
-        for (let i = 0; i < this.enemyUnits.length; i++) {
-            const unitObj = this.enemyUnits[i];
+        const toRemove = [];
+        for (let unitObj of this.enemyUnits) {
+            // const unitObj = this.enemyUnits[i];
             // console.log("Calculating new positions...")
-            unitObj.motion.calculateNewPosition();               
-            if (this.enemyUnits[i].motion.coords[1] >= appData.getBoardDimensions()[1]) {
-                console.log("This section runs.")
-                this.enemyUnits.shift();
+            unitObj.motion.calculateNewPosition();         
+            //check if enemies have left the board due to position      
+            if (unitObj.motion.coords[1] >= appData.getBoardDimensions()[1]) {
+                // console.log("This section runs.")
                 this.getLives(-1);         
+                this.enemyUnits.splice(this.enemyUnits.indexOf(unitObj),1);
+                appView.activeUnits.splice(appView.activeUnits.indexOf(unitObj));
+                unitObj.domHandle.remove();
+                // console.log(`The enemy unit leaving is at index ${this.enemyUnits.indexOf(unitObj)} in data`)
+                // console.log(`The enemy leaving is at index: ${appView.activeUnits.indexOf(unitObj)} in view`);
+            }
+            //check if enemies have left the board due to health
+            else if (unitObj.health <= 0) {
+                this.getCurrency(unitObj.bounty)
+                this.enemyUnits.splice(this.enemyUnits.indexOf(unitObj),1);
+                appView.activeUnits.splice(appView.activeUnits.indexOf(unitObj));
+                unitObj.domHandle.remove();
+            }
         }
     }
-}
+    getWave(condition) {
+        switch (condition) {
+            case "next":
+                this.wave++;
+                break; 
+        }
+    }
     getBoardDimensions() {
         const gameBoardWidth = appView.gameBoard.offsetWidth;
         const gameBoardHeight = appView.gameBoard.offsetHeight;
@@ -364,7 +416,8 @@ class Motion {
         this.boardDimensions = appData.getBoardDimensions();
         //TODO change the initial coords to be in constructor
         this.coords= [offset[0] + (this.boardDimensions[0] / 2), offset[1]+(this.boardDimensions[1] * -0.1)]; //vector
-        this.speed = this.boardDimensions[1] * .009  ; //magnitude
+        // this.speed = this.boardDimensions[1] * .009  ; //magnitude
+        this.speed = this.boardDimensions[1] * .009 * 2 ; //magnitude
         this.direction = [0, 1]; //unit vector
     }
     calculateNewPosition() {
@@ -379,6 +432,7 @@ class Unit {
     constructor(waveNumber, unitNumber) {
         this.name = `wave${waveNumber}-unit${unitNumber}`;
         this.health = 100;
+        this.bounty = 2*appData.wave;
         this.size = [0.05 * appView.gameBoard.offsetWidth, 0.1 * appView.gameBoard.offsetHeight]; // percentage of game board
         this.originOffset = [-0.5*this.size[0], -0.5*this.size[1]]; 
         this.style();
