@@ -9,6 +9,7 @@ class View {
         this.waveNumberField = document.querySelector(".wave-number-field");
         this.livesRemainingField = document.querySelector(".lives-remaining-field");
         this.currencyField = document.querySelector(".currency-field");
+        this.gameBoard = document.querySelector(".game-board");
         this.newGameButtonHandlers = [
             this.newGameButton.addEventListener('click', ()=>{appController.eventList.push("new-game-clicked")}), 
             this.newGameButton.addEventListener('mouseover', ()=>{appController.eventList.push("new-game-hover")})
@@ -33,13 +34,17 @@ class View {
         this.toRender = [];
     }
     //uses an update keyword
-    viewMainLoop(){};
+    viewMainLoop(){
+        for (let i = 0; i < this.toRender.length; i++) {
+            render(this.toRender[i]);
+        }
+    };
     clickNewGame() {
         appController.eventList.push("new-game-clicked");
         // console.log("Clicked new game")
     }
     updateScoreBoard(type, [wave, unitsOrTime, lives]) {
-        console.log("Updating Scoreboard");
+        // console.log("Updating Scoreboard");
         let waveNumberFieldString;
         switch (type) {
             case "units":
@@ -56,6 +61,21 @@ class View {
     updateCurrency(amount) {
         const currencyFieldString = `Currency: ${amount}`
         this.currencyField.innerText = currencyFieldString;
+    }
+    updateNewUnit(obj) {
+        this.activeUnits.push(obj.domHandle);
+        this.toRender.push(obj.domHandle);
+        this.gameBoard.append(obj.domHandle);
+    }
+    updatePosition(obj) {
+        //handle must be a document query selector
+        const xCoord = obj.motion.coords[0];
+        const yCoord = obj.motion.coords[1];
+        obj.domHandle.style.left = `${xCoord}px`;
+        obj.domHandle.style.top = `${yCoord}px`;
+    }
+    render(obj) {
+        this.updatePosition(obj);
     }
 }
 class Controller {
@@ -88,31 +108,31 @@ class Controller {
                     this.setNewGameState();
                     break;
                 case "new-game-hover":
-                    console.log("New Game Button Hovered");
+                    // console.log("New Game Button Hovered");
                     break;
                 case "about-game-clicked":
                     console.log("About Game Button Clicked");
                     break;
                 case "about-game-hover":
-                    console.log("About Game Button Hovered");
+                    // console.log("About Game Button Hovered");
                     break;
                 case "pause-game-clicked":
                     console.log("Pause Game Button Clicked");
                     break;
                 case "pause-game-hover":
-                    console.log("Pause Game Button Hovered");
+                    // console.log("Pause Game Button Hovered");
                     break;
                 case "circle-tower-clicked":
                     console.log("Circle Tower Button Clicked");
                     break;
                 case "circle-tower-hover":
-                    console.log("Circle Tower Button Hovered");
+                    // console.log("Circle Tower Button Hovered");
                     break;
                 case "circle-tower-info-clicked":
                     console.log("Circle Tower Info Button Clicked");
                     break;
                 case "circle-tower-info-hover":
-                    console.log("Circle Tower Info Button Hovered");
+                    // console.log("Circle Tower Info Button Hovered");
                     break;
                 //State Changes
                 case "pre-wave":
@@ -144,6 +164,11 @@ class Controller {
     setWaveState() {
         this.state = "wave";
         this.setScoreBoard();
+        for (let i = 0; i < appData.units; i++) {
+            const timeOutIncrease = 2000*i;
+            setTimeout(this.setNewUnit, 2000+timeOutIncrease);
+        }
+        console.log(appView.activeUnits);
     }
     setScoreBoard() {
         //has shape wave unit lives timer
@@ -187,28 +212,34 @@ class Controller {
         }
         appData.getTimer();
     }
+    setNewUnit() {
+        //create the units data
+        appView.updateNewUnit(appData.getNewUnit());
+        console.log("New unit created");
+                //create the unit's graphic
+    }
 }
 class Data {
     constructor() {
         this.wave = 1;
-        this.units = 10;
+        this.units = 3;
         this.lives = 30;
-        this.timer = 5;
+        this.timer = 2;
         this.timerActive = false;
         this.timerInterval = setInterval(() => {
-            console.log(this.timerActive);
+            // console.log(this.timerActive);
             if (this.timerActive) {
                 if (this.timer === 0) {
                     this.timerActive = false;
-                    console.log("this.time = 0")
+                    // console.log("this.time = 0")
                     this.getTimer("stop");
                 } else {
                     this.timer--;
-                    console.log(this.timer);
+                    // console.log(this.timer);
                     this.getTimer("update");
                 }
             } else {
-                console.log("Timer not active")
+                // console.log("Timer not active")
             }
         }, 1000);
         this.currency = 100;
@@ -219,7 +250,7 @@ class Data {
     //uses a get keyword
     dataMainLoop(){};
     getScoreBoardData() {
-        console.log("Getting data...")
+        // console.log("Getting data...")
         const scoreBoardData = [this.wave, this.units, this.lives, this.timer];
         return scoreBoardData; 
     }
@@ -243,18 +274,26 @@ class Data {
         }
         return this.timer;
     }
+    getNewUnit() {
+        const newUnit = new Unit ("test-unit");
+        this.enemyUnits.push(newUnit);
+        return newUnit;
+    }
 }
 class Motion {
     constructor() {
-        this.coords= []; //vector
-        this.speed; //magnitude
-        this.direction; //unit vector
+        this.coords= [-100, 448]; //vector
+        this.speed = -1; //magnitude
+        this.direction = [0, -1]; //unit vector
     }
 }
 class Unit {
     constructor(name) {
         this.name = name;
+        this.health = 100;
         this.motion = new Motion();
+        this.domHandle = document.createElement("div");
+        this.domHandle.classList.add(`${this.name}`);
     }
 }
 class Tower {
@@ -321,13 +360,7 @@ const appData = new Data();
 const loop = setInterval(mainLoop, 50); //tune the time value
 
 
-//experimenting with creating a wave and displaying it to the view
-currentWave = [];
-let numEnemies = 5;
-for (let i = 0; i < numEnemies; i++) {
-    currentWave[i] = new Unit (`Unit ${i}`);
-    appView.activeUnits.push(currentWave[i].name);
-};
+
 // console.log(currentWave);
 // console.log(appView.activeUnits);
 
