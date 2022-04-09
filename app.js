@@ -10,6 +10,7 @@ class View {
         this.livesRemainingField = document.querySelector(".lives-remaining-field");
         this.currencyField = document.querySelector(".currency-field");
         this.gameBoard = document.querySelector(".game-board");
+        console.log(this.gameBoard)
         this.newGameButtonHandlers = [
             this.newGameButton.addEventListener('click', ()=>{appController.eventList.push("new-game-clicked")}), 
             this.newGameButton.addEventListener('mouseover', ()=>{appController.eventList.push("new-game-hover")})
@@ -29,14 +30,18 @@ class View {
         this.circleTowerInfoButtonHandlers = [
             this.circleTowerInfoButton.addEventListener('click', ()=>{appController.eventList.push("circle-tower-info-clicked")}), 
             this.circleTowerInfoButton.addEventListener('mouseover', ()=>{appController.eventList.push("circle-tower-info-hover")})
+        ]
+        this.windowEventHandlers = [
+            window.onresize = this.updateSizes
         ];
         this.activeUnits = [];
         this.toRender = [];
     }
     //uses an update keyword
     viewMainLoop(){
+        // console.log("view main loop");
         for (let i = 0; i < this.toRender.length; i++) {
-            render(this.toRender[i]);
+            this.render(this.toRender[i]);
         }
     };
     clickNewGame() {
@@ -63,19 +68,29 @@ class View {
         this.currencyField.innerText = currencyFieldString;
     }
     updateNewUnit(obj) {
-        this.activeUnits.push(obj.domHandle);
-        this.toRender.push(obj.domHandle);
         this.gameBoard.append(obj.domHandle);
+        // console.log(obj.domHandle);
+        this.activeUnits.push(obj);
+        this.toRender.push(obj);
     }
     updatePosition(obj) {
         //handle must be a document query selector
+        // console.log(obj)
         const xCoord = obj.motion.coords[0];
         const yCoord = obj.motion.coords[1];
+        // console.log(`X coord: ${xCoord} Y coord: ${yCoord}`);
+        // console.log(`The dom handle is:${obj.domHandle}`);
         obj.domHandle.style.left = `${xCoord}px`;
         obj.domHandle.style.top = `${yCoord}px`;
     }
     render(obj) {
+        // console.log("Render called")
         this.updatePosition(obj);
+    }
+    updateSizes() {
+        for (let i = 0; i < appView.activeUnits.length; i++) {
+            appView.activeUnits[i].resize();
+        }
     }
 }
 class Controller {
@@ -164,11 +179,12 @@ class Controller {
     setWaveState() {
         this.state = "wave";
         this.setScoreBoard();
+        let timeOut = 0;
         for (let i = 0; i < appData.units; i++) {
-            const timeOutIncrease = 2000*i;
-            setTimeout(this.setNewUnit, 2000+timeOutIncrease);
+            setTimeout(this.setNewUnit, timeOut);
+            timeOut += 2000;
         }
-        console.log(appView.activeUnits);
+        setTimeout(console.log(appView.activeUnits), timeOut);
     }
     setScoreBoard() {
         //has shape wave unit lives timer
@@ -200,14 +216,14 @@ class Controller {
     setTimer(startStopUpdate){    
         switch (startStopUpdate) {
             case "start": 
-                console.log("Setting the timer...");
+                // console.log("Setting the timer...");
                 appData.getTimer("start");
                 break;
             case "update":
-                console.log("Updating the timer...");
+                // console.log("Updating the timer...");
                 appView.updateTimer();
             case "stop":
-                console.log("Stopping the timer");
+                // console.log("Stopping the timer");
                 this.setState("wave")
         }
         appData.getTimer();
@@ -215,8 +231,7 @@ class Controller {
     setNewUnit() {
         //create the units data
         appView.updateNewUnit(appData.getNewUnit());
-        console.log("New unit created");
-                //create the unit's graphic
+        // console.log("New unit created");
     }
 }
 class Data {
@@ -248,7 +263,9 @@ class Data {
         this.enemyUnits = [];
     }
     //uses a get keyword
-    dataMainLoop(){};
+    dataMainLoop(){
+        this.getNewEnemyPositions();
+    };
     getScoreBoardData() {
         // console.log("Getting data...")
         const scoreBoardData = [this.wave, this.units, this.lives, this.timer];
@@ -279,12 +296,32 @@ class Data {
         this.enemyUnits.push(newUnit);
         return newUnit;
     }
+    getNewEnemyPositions(){
+        for (let i = 0; i < this.enemyUnits.length; i++) {
+            const unitObj = this.enemyUnits[i];
+            // console.log("Calculating new positions...")
+            unitObj.motion.calculateNewPosition();
+        }
+    };
+    getBoardDimensions() {
+        const gameBoardWidth = appView.gameBoard.offsetWidth;
+        const gameBoardHeight = appView.gameBoard.offsetHeight;
+        return [gameBoardWidth, gameBoardHeight]
+    }
 }
 class Motion {
     constructor() {
-        this.coords= [-100, 448]; //vector
-        this.speed = -1; //magnitude
-        this.direction = [0, -1]; //unit vector
+        this.boardDimensions = appData.getBoardDimensions();
+        this.coords= [this.boardDimensions[0] / 2, this.boardDimensions[1] * -0.1]; //vector
+        this.speed = this.boardDimensions[1] * .009  ; //magnitude
+        this.direction = [0, 1]; //unit vector
+    }
+    calculateNewPosition() {
+        //new position = current position + speed
+        let deltas = [(this.speed*this.direction[0]),(this.speed*this.direction[1])];
+        // console.log(deltas)
+        this.coords = [this.coords[0]+deltas[0],this.coords[1]+deltas[1]];
+        // console.log(this.coords);
     }
 }
 class Unit {
@@ -294,6 +331,16 @@ class Unit {
         this.motion = new Motion();
         this.domHandle = document.createElement("div");
         this.domHandle.classList.add(`${this.name}`);
+        this.resize();
+    }
+    resize() {
+        console.log("Resizing...")
+        let oldBoardDimensions = this.motion.boardDimensions;
+        this.motion.boardDimensions = appData.getBoardDimensions();
+        this.motion.coords= [this.motion.boardDimensions[0]*this.motion.coords[0]/oldBoardDimensions[0], this.motion.boardDimensions[1]*this.motion.coords[1]/oldBoardDimensions[1]]; //vector
+        this.motion.speed = appView.gameBoard.offsetHeight * .009  ; //magnitude
+        this.domHandle.style.width = `${appView.gameBoard.offsetWidth * .05}px`;
+        this.domHandle.style.height = `${appView.gameBoard.offsetHeight * .1}px`;
     }
 }
 class Tower {
@@ -357,7 +404,7 @@ let activeGame = true;
 const appView = new View();
 const appController = new Controller();
 const appData = new Data();
-const loop = setInterval(mainLoop, 50); //tune the time value
+const loop = setInterval(mainLoop, 100); //tune the time value
 
 
 
