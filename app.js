@@ -327,7 +327,7 @@ class Controller {
                     timeOut += 2000;
                 }
                 console.log(this.timeOuts);
-                setTimeout(console.log(appView.activeUnits), timeOut+2000);
+                // setTimeout(console.log(appView.activeUnits), timeOut+2000);
                 break;
             case "check":
                 // console.log(appData.enemyUnits)
@@ -413,7 +413,7 @@ class Controller {
 class Data {
     constructor() {
         this.wave = 1;
-        this.units = 3;
+        this.units = 1;
         this.lives = 30;
         this.timer = appController.timerValue;
         this.timerActive = false;
@@ -442,7 +442,7 @@ class Data {
     }
     reset() {
         this.wave = 1;
-        this.units = 3;
+        this.units = 2;
         this.lives = 1;
         this.timer = appController.timerValue;
         this.timerActive = false;
@@ -492,13 +492,17 @@ class Data {
         this.playerUnits.push(newTower);
         return newTower;
     }
+    getTowerAttacks() {
+        //iterate through 
+    }
     getNewEnemyPositions(){
         if (appController.state != "game-over"){    
             const toRemove = [];
             for (let unitObj of this.enemyUnits) {
                 // const unitObj = this.enemyUnits[i];
                 // console.log("Calculating new positions...")
-                unitObj.motion.calculateNewPosition();         
+                unitObj.motion.calculateNewPosition();     
+                this.getTowersInRange(unitObj)    
                 //check if enemies have left the board due to position      
                 if (unitObj.motion.coords[1] >= appData.getBoardDimensions()[1]) {
                     // console.log("This section runs.")
@@ -533,7 +537,7 @@ class Data {
         const gameBoardHeight = appView.gameBoard.offsetHeight;
         const gameBoardOffsetTop = appView.gameBoard.offsetTop;
         const gameBoardOffsetLeft = appView.gameBoard.offsetLeft;
-        return [gameBoardWidth, gameBoardHeight]
+        return [gameBoardWidth, gameBoardHeight, gameBoardOffsetLeft, gameBoardOffsetTop]
     }
     getLives(change=0) {
         if (change != 0) {
@@ -545,6 +549,25 @@ class Data {
                 }
             }
             return this.lives;
+    }
+    getTowersInRange(unitObj) {
+        //wherever check for vector length, when vector length > range, remove from list 
+        for (let tower of appData.playerUnits) {
+            // console.log("tower loop")
+            // console.log(tower.originVector)
+            console.log(unitObj.motion.originVector)
+            const distanceVector = [unitObj.motion.originVector[0] - tower.originVector[0], unitObj.motion.originVector[1] - tower.originVector[1]]
+            // console.log(distanceVector);
+            const distance = Math.sqrt(distanceVector[0]**2 + distanceVector[1]**2);
+            console.log(distance);
+            if (distance <= tower.range && !tower.enemiesInRange.includes(unitObj)) {
+                console.log("Pushing enemy to array!")
+                tower.enemiesInRange.push(unitObj);
+            } else if (distance >= tower.range && tower.enemiesInRange.includes(unitObj)) {
+                tower.enemiesInRange.splice(tower.enemiesInRange.indexOf(unitObj),1);
+                console.log("Pulling enemy from array!")
+            }
+        }
     }
 }
 class Motion {
@@ -591,6 +614,7 @@ class Unit {
         this.domHandle.style.top = `${appData.getBoardDimensions()[1] * -0.1}px`;
         this.domHandle.addEventListener('click',()=>{this.health -= 55});
         // this.domHandle.style.boxShadow = `0 -5px 5px blue`
+        console.log(`units offset left ${this.domHandle.offsetLeft}offset top ${this.domHandle.offsetTop}`)
     }
     resize() {
         // console.log("Resizing...")
@@ -609,8 +633,16 @@ class Tower {
         this.damage = damage;
         this.attackSpeed = attackSpeed;
         this.range = range;
+        this.enemiesInRange = [];
+        this.shootInterval = setInterval(this.shoot, this.attackSpeed);
         this.boardDimensions = appData.getBoardDimensions();
         this.style();
+    }
+    shoot() {
+        if (this.enemiesInRange) {
+            this.enemiesInRange[0].health -= this.damage;
+            console.log("Shooting!")
+        }
     }
     style() {
         this.domHandle = document.createElement("div");
@@ -621,6 +653,9 @@ class Tower {
         this.originOffset = [-0.5*this.size[0], -0.5*this.size[1]]; 
         this.domHandle.style.width = `${this.size[0]}px`;
         this.domHandle.style.height = `${this.size[1]}px`;
+        console.log(this.domHandle.offsetLeft)
+        console.log(this.originOffset[0])
+        console.log(this.boardDimensions[2])
         this.originVector = [this.domHandle.offsetLeft + this.originOffset[0] + this.boardDimensions[2],this.domHandle.offsetTop + this.originOffset[1] + this.boardDimensions[2]]
     }
     resize() {
