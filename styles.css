@@ -171,6 +171,9 @@ body {
 .overlay-element {
     /* background: red; */
     z-index: 1;
+    display:flex;
+    justify-content: center;
+    align-items: center;
     /* border: 1px solid black; */
 }
 .overlay-border {
@@ -183,11 +186,21 @@ body {
 .restricted {
     border: none;
 }
+.tower {
+    border: none;
+}
 .highlight {
     background-color: blue;
 }
-
-
+.game-over {
+    top: 40%;
+    left: 15%;
+    position: absolute;
+    /* grid-row: 5 / 8;
+    grid-column: 2 / 10; */
+    font-size: 100px;
+    z-index: 3;
+}
 /* Buttons */
 .about-game-button {
     cursor: pointer;
@@ -199,6 +212,16 @@ body {
     /* display:flex;
     justify-content: center;
     align-items: center; */
+}
+.circle-tower {
+    /* height: 50px;
+    width: 50px; */
+    /* display: flex;
+    justify-content: center;
+    align-items: center; */
+    background-color: rgb(168, 91, 40);
+    border: solid 3px rgb(107, 56, 22);
+    border-radius: 50%;
 }
 .pause-game-button {
     height: 50px;

@@ -30,7 +30,10 @@ class View {
             this.pauseGameButton.addEventListener('mouseover', ()=>{appController.eventList.push("pause-game-hover")})
         ];
         this.circleTowerButtonHandlers = [
-            this.circleTowerButton.addEventListener('click', ()=>{appController.eventList.push("circle-tower-clicked")}), 
+            this.circleTowerButton.addEventListener('click', ()=>{
+                appController.eventList.push("circle-tower-clicked")
+                this.updateTowerGridToggle();
+            }), 
             this.circleTowerButton.addEventListener('mouseover', ()=>{appController.eventList.push("circle-tower-hover")})
         ];
         this.circleTowerInfoButtonHandlers = [
@@ -41,17 +44,65 @@ class View {
             window.onresize = this.updateSizes
         ];
         this.gameBoardOverlayElements.forEach(element => {
-            element.addEventListener('mouseenter',this.testFunc)
-            element.addEventListener('mouseout',this.testFunc)
+            element.addEventListener('mouseenter',this.updateTowerPlacement)
+            element.addEventListener('mouseout',this.updateTowerPlacement)
+            element.addEventListener('click', this.updateTower);
         })
-        this.gameBoard.addEventListener('click', this.testFunc2);
+        // this.gameBoard.addEventListener('click', this.updateTowerGrid);
         this.activeUnits = [];
+        this.activeTowers = [];
         this.toRender = [];
+        this.setTerrain();
     }
-    testFunc() {
+    //user clicks on tower button -> set var to true 
+    //toggle the grid highlight -> active while var is true
+    //user clicks on a viable grid space -> set var to false 
+    //toggle the grid highlight -> active while var is true
+    //place a tower at that location 
+    //add location to restricted list
+    setTerrain() {
+        const pathTiles = [4,5,14,15,24,25,34,35,44,45,54,55,64,65,74,75,84,85,94,95];
+        const stoneTiles = [90,91,92,93,96,97,98,99];
+        const underLayElements = document.querySelector(".game-board-underlay").children;
+        const overLayElements = document.querySelector(".game-board-overlay").children;
+        for (let i = 0; i < 100; i++) {
+            if (pathTiles.includes(i)) {
+                underLayElements[i].classList.toggle("path");
+                overLayElements[i].classList.toggle("restricted")
+            }
+            else if (stoneTiles.includes(i)) {
+                underLayElements[i].classList.toggle("stone");
+                overLayElements[i].classList.toggle("restricted")
+            } else {
+                underLayElements[i].classList.toggle("grass");
+            }   
+        }
+    }
+    //TODO update the tower view changes to a state in the controller
+    updateTowerPlacement() {
+        //add && variable related to state 
         let restrictedTiles = ["path", "stone"]
-        if (!event.target.classList.contains("restricted")) { 
-            event.target.classList.toggle("highlight") }
+        if (!event.target.classList.contains("restricted") && !event.target.classList.contains("tower") && appController.placingTower) { 
+            event.target.classList.toggle("highlight"); 
+        }
+    }
+    updateTower(event) {
+        //attach tower object here instead of below which is placeholder
+        if (!event.target.classList.contains("restricted") && !event.target.classList.contains("tower") && appController.placingTower) {
+            event.target.classList.toggle("highlight");
+            event.target.classList.toggle("tower");
+            event.target.append(appController.setNewTower())
+            // event.target.classList.toggle("circle-tower")
+            
+        console.log(event.target);
+        }
+    }
+    updateTowerGridToggle() {
+        for (let i = 0; i < this.gameBoardOverlayElements.length; i++) {
+            if (!this.gameBoardOverlayElements[i].classList.contains("restricted") && !this.gameBoardOverlayElements[i].classList.contains("tower")) {
+                this.gameBoardOverlayElements[i].classList.toggle("overlay-border");    
+            }
+        }
     }
     reset() {
         length = this.gameBoard.children.length;
@@ -59,7 +110,23 @@ class View {
             // console.log(`Run ${1+i}`)
             this.gameBoard.children[0].remove();
         }
+        for (let i = 0; i < this.gameBoardOverlayElements.length; i++) {
+            // console.log(`Run ${1+i}`)
+            if (this.gameBoardOverlayElements[i].hasChildNodes()) {
+                this.gameBoardOverlayElements[i].firstChild.remove();
+            }
+        }
+        if (document.querySelector(".game-over")) {
+            document.querySelector(".game-over").remove();
+        }
+        const towerSpaces = document.querySelectorAll(".tower")
+        console.log(towerSpaces);
+        for (let space of towerSpaces) {
+            space.classList.toggle("tower");
+            space.classList.toggle("overlay-border");
+        }
         this.activeUnits = [];
+        this.activeTowers = [];
         this.toRender = [];
     }
     //uses an update keyword
@@ -116,6 +183,17 @@ class View {
         for (let i = 0; i < appView.activeUnits.length; i++) {
             appView.activeUnits[i].resize();
         }
+        for (let i = 0; i < appData.playerUnits.length; i++) {
+            appData.playerUnits[i].resize();
+        }
+    }
+    updateGameOver() {
+        if (!document.querySelector(".game-over")) {
+            const gameOver = document.createElement('div')
+            gameOver.classList.add("game-over");
+            gameOver.innerText = "GAME OVER";
+            appView.gameBoard.append(gameOver);
+        }
     }
 }
 class Controller {
@@ -131,6 +209,7 @@ class Controller {
             "game-over"];
         this.state="pre-game-root";
         this.eventList = [];
+        this.placingTower = false;
         this.timeOuts = [];
         this.timerValue = 3;
     };
@@ -144,7 +223,7 @@ class Controller {
     }
     processEvents() {
         for (let i = 0; i < this.eventList.length; i++) {
-            console.log(this.eventList);
+            // console.log(this.eventList);
             switch(this.eventList.shift()) {
                 //Button Interactions
                 case "new-game-clicked":
@@ -168,6 +247,7 @@ class Controller {
                     break;
                 case "circle-tower-clicked":
                     console.log("Circle Tower Button Clicked");
+                    this.placingTower = true;
                     break;
                 case "circle-tower-hover":
                     // console.log("Circle Tower Button Hovered");
@@ -187,6 +267,9 @@ class Controller {
                     console.log(`Changing state to wave`);
                     this.setWaveState("new");
                     break;
+                case "game-over":
+                    this.setGameOverState();
+
             console.log(this.eventList);
             }
         }
@@ -249,8 +332,8 @@ class Controller {
                 // console.log(appData.enemyUnits)
                 // console.log(appData.enemyUnits.length)
                 // console.log(this.timeOuts.length)
-                console.log(`Enemy units: ${appData.enemyUnits.length}`)
-                console.log(`Timeouts: ${this.timeOuts.length}`)
+                // console.log(`Enemy units: ${appData.enemyUnits.length}`)
+                // console.log(`Timeouts: ${this.timeOuts.length}`)
                 if (appData.enemyUnits.length === 0 && this.timeOuts.length === 0) {
                     console.log("NO more enemies!")
                     this.setWaveState("next");
@@ -309,6 +392,21 @@ class Controller {
         appView.updateNewUnit(appData.getNewUnit());
         // console.log("New unit created");
     }
+    setNewTower() {
+        this.placingTower = false;
+        appView.updateTowerGridToggle();
+        const newTower = appData.getNewTower();
+        appView.activeTowers.push(newTower)
+        return newTower.domHandle;
+    }
+    setGameOverState() {
+        this.state = "game-over"
+        appView.updateGameOver();
+        //stop animating 
+        //stop data
+        //stop ability to click on anything but new game
+
+    }
 }
 class Data {
     constructor() {
@@ -342,7 +440,7 @@ class Data {
     reset() {
         this.wave = 1;
         this.units = 3;
-        this.lives = 30;
+        this.lives = 1;
         this.timer = appController.timerValue;
         this.timerActive = false;
         this.currency = 50;
@@ -386,28 +484,37 @@ class Data {
         appController.timeOuts.shift();
         return newUnit;
     }
+    getNewTower() {
+        const newTower = new Tower(`circle-tower`, 50, 1000, 500);
+        this.playerUnits.push(newTower);
+        return newTower;
+    }
     getNewEnemyPositions(){
-        const toRemove = [];
-        for (let unitObj of this.enemyUnits) {
-            // const unitObj = this.enemyUnits[i];
-            // console.log("Calculating new positions...")
-            unitObj.motion.calculateNewPosition();         
-            //check if enemies have left the board due to position      
-            if (unitObj.motion.coords[1] >= appData.getBoardDimensions()[1]) {
-                // console.log("This section runs.")
-                this.getLives(-1);         
-                this.enemyUnits.splice(this.enemyUnits.indexOf(unitObj),1);
-                appView.activeUnits.splice(appView.activeUnits.indexOf(unitObj));
-                unitObj.domHandle.remove();
-                // console.log(`The enemy unit leaving is at index ${this.enemyUnits.indexOf(unitObj)} in data`)
-                // console.log(`The enemy leaving is at index: ${appView.activeUnits.indexOf(unitObj)} in view`);
-            }
-            //check if enemies have left the board due to health
-            else if (unitObj.health <= 0) {
-                appController.setCurrency(unitObj.bounty)
-                this.enemyUnits.splice(this.enemyUnits.indexOf(unitObj),1);
-                appView.activeUnits.splice(appView.activeUnits.indexOf(unitObj));
-                unitObj.domHandle.remove();
+        if (appController.state != "game-over"){    
+            const toRemove = [];
+            for (let unitObj of this.enemyUnits) {
+                // const unitObj = this.enemyUnits[i];
+                // console.log("Calculating new positions...")
+                unitObj.motion.calculateNewPosition();         
+                //check if enemies have left the board due to position      
+                if (unitObj.motion.coords[1] >= appData.getBoardDimensions()[1]) {
+                    // console.log("This section runs.")
+                    this.getLives(-1);         
+                    appView.toRender.splice(appView.toRender.indexOf(unitObj),1);
+                    this.enemyUnits.splice(this.enemyUnits.indexOf(unitObj),1);
+                    appView.activeUnits.splice(appView.activeUnits.indexOf(unitObj));
+                    unitObj.domHandle.remove();
+                    // console.log(`The enemy unit leaving is at index ${this.enemyUnits.indexOf(unitObj)} in data`)
+                    // console.log(`The enemy leaving is at index: ${appView.activeUnits.indexOf(unitObj)} in view`);
+                }
+                //check if enemies have left the board due to health
+                else if (unitObj.health <= 0) {
+                    appController.setCurrency(unitObj.bounty)
+                    appView.toRender.splice(appView.toRender.indexOf(unitObj),1);
+                    this.enemyUnits.splice(this.enemyUnits.indexOf(unitObj),1);
+                    appView.activeUnits.splice(appView.activeUnits.indexOf(unitObj));
+                    unitObj.domHandle.remove();
+                }
             }
         }
     }
@@ -427,8 +534,12 @@ class Data {
         if (change != 0) {
             this.lives += change;
             appController.setScoreBoard("lives", this.getScoreBoardData());
-        }
-        return this.lives;
+            if (this.lives <= 0) {
+                appController.setState("game-over");
+                
+                }
+            }
+            return this.lives;
     }
 }
 class Motion {
@@ -453,7 +564,8 @@ class Unit {
         this.name = `wave${waveNumber}-unit${unitNumber}`;
         this.health = 100;
         this.bounty = 2*appData.wave;
-        this.size = [0.05 * appView.gameBoard.offsetWidth, 0.1 * appView.gameBoard.offsetHeight]; // percentage of game board
+        this.proportions = [0.05, 0.07];
+        this.size = [this.proportions[0] * appView.gameBoard.offsetWidth, this.proportions[1] * appView.gameBoard.offsetHeight]; // percentage of game board
         this.originOffset = [-0.5*this.size[0], -0.5*this.size[1]]; 
         this.style();
         this.motion = new Motion(this.originOffset);
@@ -466,6 +578,7 @@ class Unit {
         this.domHandle.style.position = "absolute";
         this.domHandle.style.backgroundColor = "blue";
         this.domHandle.style.borderRadius = "50%";
+        this.domHandle.style.zIndex = 2;
         this.domHandle.style.left = `${appData.getBoardDimensions()[1]/2}px`;
         this.domHandle.style.top = `${appData.getBoardDimensions()[1] * -0.1}px`;
         this.domHandle.addEventListener('click',()=>{this.health -= 55});
@@ -475,7 +588,7 @@ class Unit {
         // console.log("Resizing...")
         let oldBoardDimensions = this.motion.boardDimensions;
         this.motion.boardDimensions = appData.getBoardDimensions();
-        this.size = [0.05 * appView.gameBoard.offsetWidth, 0.1 * appView.gameBoard.offsetHeight]; // percentage of game board
+        this.size = [this.proportions[0] * appView.gameBoard.offsetWidth, this.proportions[1] * appView.gameBoard.offsetHeight]; // percentage of game board
         this.motion.coords= [this.motion.boardDimensions[0]*this.motion.coords[0]/oldBoardDimensions[0], this.motion.boardDimensions[1]*this.motion.coords[1]/oldBoardDimensions[1]]; //vector
         this.motion.speed = appView.gameBoard.offsetHeight * .009  ;
         this.domHandle.style.width = `${this.size[0]}px`;
@@ -483,7 +596,30 @@ class Unit {
     }
 }
 class Tower {
-    constructor() {
+    constructor(name, damage, attackSpeed, range) {
+        this.name = name;
+        this.damage = damage;
+        this.attackSpeed = attackSpeed;
+        this.range = range;
+        this.boardDimensions = appData.getBoardDimensions();
+        this.style();
+    }
+    style() {
+        this.domHandle = document.createElement("div");
+        this.domHandle.classList.add(`${this.name}`); 
+        this.domHandle.classList.add(`circle-tower`); 
+        this.proportions = [0.05, 0.07];
+        this.size = [this.proportions[0] * appView.gameBoard.offsetWidth, this.proportions[1] * appView.gameBoard.offsetHeight]; // percentage of game board
+        this.originOffset = [-0.5*this.size[0], -0.5*this.size[1]]; 
+        this.domHandle.style.width = `${this.size[0]}px`;
+        this.domHandle.style.height = `${this.size[1]}px`;
+    }
+    resize() {
+        let oldBoardDimensions = this.boardDimensions;
+        this.boardDimensions = appData.getBoardDimensions();
+        this.size = [this.proportions[0] * this.boardDimensions[0], this.proportions[1] * this.boardDimensions[1]]; // percentage of game board
+        this.domHandle.style.width = `${this.size[0]}px`;
+        this.domHandle.style.height = `${this.size[1]}px`;
     }
 }
 
@@ -510,7 +646,7 @@ function setTerrain() {
         }   
     }
 }
-setTerrain();
+// setTerrain();
 
 function moveDown() {
     const unit1 = document.querySelector(".board-element");
