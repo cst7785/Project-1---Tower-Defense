@@ -180,6 +180,7 @@ class View {
         this.updatePosition(obj);
     }
     updateSizes() {
+        appData.gameBoardDimensions = appData.getBoardDimensions();
         for (let i = 0; i < appView.activeUnits.length; i++) {
             appView.activeUnits[i].resize();
         }
@@ -402,6 +403,7 @@ class Controller {
     setGameOverState() {
         this.state = "game-over"
         appView.updateGameOver();
+        const eventListenersToTurnOff = [];
         //stop animating 
         //stop data
         //stop ability to click on anything but new game
@@ -436,6 +438,7 @@ class Data {
         this.income = 50;
         this.playerUnits = [];
         this.enemyUnits = [];
+        this.gameBoardDimensions = this.getBoardDimensions();
     }
     reset() {
         this.wave = 1;
@@ -528,6 +531,8 @@ class Data {
     getBoardDimensions() {
         const gameBoardWidth = appView.gameBoard.offsetWidth;
         const gameBoardHeight = appView.gameBoard.offsetHeight;
+        const gameBoardOffsetTop = appView.gameBoard.offsetTop;
+        const gameBoardOffsetLeft = appView.gameBoard.offsetLeft;
         return [gameBoardWidth, gameBoardHeight]
     }
     getLives(change=0) {
@@ -553,10 +558,12 @@ class Motion {
     }
     calculateNewPosition() {
         //new position = current position + speed
+        this.boardDimensions = appData.getBoardDimensions();
         let deltas = [(this.speed*this.direction[0]),(this.speed*this.direction[1])];
         // console.log(deltas)
         this.coords = [this.coords[0]+deltas[0],this.coords[1]+deltas[1]];
         // console.log(this.coords);
+        this.originVector = [this.coords[0]+this.boardDimensions[2], this.coords[1]+this.boardDimensions[3]];
     }
 }
 class Unit {
@@ -569,6 +576,7 @@ class Unit {
         this.originOffset = [-0.5*this.size[0], -0.5*this.size[1]]; 
         this.style();
         this.motion = new Motion(this.originOffset);
+        this.originVector = []; //vector from the top left corner of the page to the center of the unit
     }
     style() {
         this.domHandle = document.createElement("div");
@@ -607,12 +615,13 @@ class Tower {
     style() {
         this.domHandle = document.createElement("div");
         this.domHandle.classList.add(`${this.name}`); 
-        this.domHandle.classList.add(`circle-tower`); 
+        // this.domHandle.classList.add(`circle-tower`); 
         this.proportions = [0.05, 0.07];
         this.size = [this.proportions[0] * appView.gameBoard.offsetWidth, this.proportions[1] * appView.gameBoard.offsetHeight]; // percentage of game board
         this.originOffset = [-0.5*this.size[0], -0.5*this.size[1]]; 
         this.domHandle.style.width = `${this.size[0]}px`;
         this.domHandle.style.height = `${this.size[1]}px`;
+        this.originVector = [this.domHandle.offsetLeft + this.originOffset[0] + this.boardDimensions[2],this.domHandle.offsetTop + this.originOffset[1] + this.boardDimensions[2]]
     }
     resize() {
         let oldBoardDimensions = this.boardDimensions;
@@ -622,54 +631,6 @@ class Tower {
         this.domHandle.style.height = `${this.size[1]}px`;
     }
 }
-
-
-
-
-
-//temporary functions for development
-function setTerrain() {
-    const pathTiles = [4,5,14,15,24,25,34,35,44,45,54,55,64,65,74,75,84,85,94,95];
-    const stoneTiles = [90,91,92,93,96,97,98,99];
-    const underLayElements = document.querySelector(".game-board-underlay").children;
-    const overLayElements = document.querySelector(".game-board-overlay").children;
-    for (let i = 0; i < 100; i++) {
-        if (pathTiles.includes(i)) {
-            underLayElements[i].classList.toggle("path");
-            overLayElements[i].classList.toggle("restricted")
-        }
-        else if (stoneTiles.includes(i)) {
-            underLayElements[i].classList.toggle("stone");
-            overLayElements[i].classList.toggle("restricted")
-        } else {
-            underLayElements[i].classList.toggle("grass");
-        }   
-    }
-}
-// setTerrain();
-
-function moveDown() {
-    const unit1 = document.querySelector(".board-element");
-    currentPosition = unit1.offsetTop;
-    // console.log(currentPosition);
-    speed = 1;
-    nextPosition = currentPosition + speed;
-    // console.log(nextPosition)
-    unit1.style.top = `${nextPosition}px`;       
-}
-// const test = setInterval(moveDown, 50);
-
-//TODOs
-//pseudocoding
-function init(){};
-function render(){};
-
-// const loop = setInterval(moveDown, 50);
-
-//create a wave class/object that creates a specified number of unit objects with the specified parameters
-//How to easily change properties of the unit such as health, armor, speed in between waves?
-
-
 
 // goal is to have a game loop on interval
 // create a game loop of self sufficient classes, each class has its own "loop" function
@@ -685,19 +646,13 @@ const appData = new Data();
 const loop = setInterval(mainLoop, 100); //tune the time value
 
 
-
-// console.log(currentWave);
-// console.log(appView.activeUnits);
-
-//how does the user get from pressing New game to having the first enemy appear onscreen?
-//init function runs when webpage loads
-//created event listeners for each clickable object 
-//user clicks on new game
-//a timer starts and is displayed on screen, wave 1 appears, remaining lives appears, starting currency appears
-//a user can then click on towers within the tower menu 
-//
-
 //stretch goal -- save game / load game;
+
+//Known Bug List
+//issues with class toggling of restricted, tower, grid overlay for placing towers, pressing new game 
+//issues with resizing not being consistent
+
+
 
 //******States****** 
 //***Pregame***
