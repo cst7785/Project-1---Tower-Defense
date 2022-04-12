@@ -402,7 +402,7 @@ class Controller {
         this.placingTower = false;
         appView.updateTowerGridToggle();
         const newTower = appData.getNewTower();
-        appView.activeTowers.push(newTower)
+        appView.activeTowers.push(newTower.name)
         return newTower;
     }
     setGameOverState() {
@@ -444,17 +444,19 @@ class Data {
         this.playerUnits = [];
         this.enemyUnits = [];
         this.gameBoardDimensions = this.getBoardDimensions();
+        this.towerNumber = 1;
     }
     reset() {
         this.wave = 1;
-        this.units = 1;
-        this.lives = 1;
+        this.units = 10;
+        this.lives = 30;
         this.timer = appController.timerValue;
         this.timerActive = false;
         this.currency = 50;
         this.income = 50;
         this.playerUnits = [];
         this.enemyUnits = [];
+        this.towerNumber = 1;
     }
     //uses a get keyword
     dataMainLoop(){
@@ -493,8 +495,9 @@ class Data {
         return newUnit;
     }
     getNewTower() {
-        const newTower = new Tower(`circle-tower`, 50, 1000, 200);
+        const newTower = new Tower(`circle-tower-${this.towerNumber}`, 45, 1000, 200);
         this.playerUnits.push(newTower);
+        this.towerNumber++;
         return newTower;
     }
     getTowerAttacks() {
@@ -503,6 +506,7 @@ class Data {
     getNewEnemyPositions(){
         if (appController.state != "game-over"){    
             const toRemove = [];
+            console.log(this.enemyUnits);
             for (let unitObj of this.enemyUnits) {
                 // const unitObj = this.enemyUnits[i];
                 // console.log("Calculating new positions...")
@@ -521,13 +525,13 @@ class Data {
                     // console.log(`The enemy leaving is at index: ${appView.activeUnits.indexOf(unitObj)} in view`);
                 }
                 //check if enemies have left the board due to health
-                else if (unitObj.health <= 0) {
-                    appController.setCurrency(unitObj.bounty)
-                    appView.toRender.splice(appView.toRender.indexOf(unitObj),1);
-                    this.enemyUnits.splice(this.enemyUnits.indexOf(unitObj),1);
-                    appView.activeUnits.splice(appView.activeUnits.indexOf(unitObj));
-                    unitObj.domHandle.remove();
-                }
+                // else if (unitObj.health <= 0) {
+                //     appController.setCurrency(unitObj.bounty)
+                //     appView.toRender.splice(appView.toRender.indexOf(unitObj),1);
+                //     this.enemyUnits.splice(this.enemyUnits.indexOf(unitObj),1);
+                //     appView.activeUnits.splice(appView.activeUnits.indexOf(unitObj));
+                //     unitObj.domHandle.remove();
+                // }
             }
         }
     }
@@ -563,9 +567,10 @@ class Data {
             // console.log(tower.originVector)
             // console.log(unitObj.motion.originVector)
             const distanceVector = [unitObj.motion.originVector[0] - tower.originVector[0], unitObj.motion.originVector[1] - tower.originVector[1]]
+            
             // console.log(distanceVector);
             const distance = Math.sqrt(distanceVector[0]**2 + distanceVector[1]**2);
-            console.log(distance);
+            // console.log(distance);
             if (distance <= tower.range && !tower.enemiesInRange.includes(unitObj)) {
                 console.log("Pushing enemy to array!")
                 tower.enemiesInRange.push(unitObj);
@@ -593,6 +598,17 @@ class Motion {
         this.coords = [this.coords[0]+deltas[0],this.coords[1]+deltas[1]];
         // console.log(this.coords);
         this.originVector = [this.coords[0]+this.boardDimensions[2], this.coords[1]+this.boardDimensions[3]];
+    }
+}
+class Projectile {
+    constructor() {
+        this.proportions = [0.01, 0.03];
+        this.size = [this.proportions[0] * appView.gameBoard.offsetWidth, this.proportions[1] * appView.gameBoard.offsetHeight]; // percentage of game board
+        this.motion = new Motion();
+    }
+    style() {
+        this.domHandle = document.createElement("div");
+        // this.domHandle.classList.add(`${this.name}`);
     }
 }
 class Unit {
@@ -643,15 +659,22 @@ class Tower {
         this.shootInterval = setInterval( ()=>{
             console.log("Would shoot if enemy in")
             if (this.enemiesInRange.length > 0) {
-                this.enemiesInRange[0].health -= this.damage;
+                const firstEnemy = this.enemiesInRange[0]
+                firstEnemy.health -= this.damage;
                 console.log("Shooting!")
-                if (this.enemiesInRange[0].health <= 0) {
+                if (firstEnemy.health <= 0) {
+                    // unit in mutiple enemies in range array... when this condition occurs, each tower removes 1 enemy from array
                     appController.setCurrency(this.enemiesInRange[0].bounty)
                     appView.toRender.splice(appView.toRender.indexOf(this.enemiesInRange[0]),1);
                     appData.enemyUnits.splice(appData.enemyUnits.indexOf(this.enemiesInRange[0]),1);
                     appView.activeUnits.splice(appView.activeUnits.indexOf(this.enemiesInRange[0]));
                     this.enemiesInRange[0].domHandle.remove();
                     this.enemiesInRange.shift()
+                    for (let tower of appData.playerUnits) {
+                        if (tower.enemiesInRange.includes(firstEnemy)) {
+                            tower.enemiesInRange.splice(tower.enemiesInRange.indexOf(firstEnemy),1);
+                        }
+                    }
                 }
             }}, this.attackSpeed);
         this.boardDimensions = appData.getBoardDimensions();
@@ -668,7 +691,7 @@ class Tower {
     style() {
         this.domHandle = document.createElement("div");
         this.domHandle.classList.add(`${this.name}`); 
-        // this.domHandle.classList.add(`circle-tower`); 
+        this.domHandle.classList.add(`circle-tower`); 
         this.proportions = [0.05, 0.07];
         this.size = [this.proportions[0] * appView.gameBoard.offsetWidth, this.proportions[1] * appView.gameBoard.offsetHeight]; // percentage of game board
         this.originOffset = [-0.5*this.size[0], -0.5*this.size[1]]; 
