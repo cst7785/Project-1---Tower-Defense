@@ -91,7 +91,11 @@ class View {
         if (!event.target.classList.contains("restricted") && !event.target.classList.contains("tower") && appController.placingTower) {
             event.target.classList.toggle("highlight");
             event.target.classList.toggle("tower");
-            event.target.append(appController.setNewTower())
+            const newTower = appController.setNewTower()
+            event.target.append(newTower.domHandle);
+            newTower.calculateOriginVector();
+
+            
             // event.target.classList.toggle("circle-tower")
             
         console.log(event.target);
@@ -391,6 +395,7 @@ class Controller {
     setNewUnit() {
         //create the units data
         appView.updateNewUnit(appData.getNewUnit());
+
         // console.log("New unit created");
     }
     setNewTower() {
@@ -398,7 +403,7 @@ class Controller {
         appView.updateTowerGridToggle();
         const newTower = appData.getNewTower();
         appView.activeTowers.push(newTower)
-        return newTower.domHandle;
+        return newTower;
     }
     setGameOverState() {
         this.state = "game-over"
@@ -442,7 +447,7 @@ class Data {
     }
     reset() {
         this.wave = 1;
-        this.units = 2;
+        this.units = 1;
         this.lives = 1;
         this.timer = appController.timerValue;
         this.timerActive = false;
@@ -488,7 +493,7 @@ class Data {
         return newUnit;
     }
     getNewTower() {
-        const newTower = new Tower(`circle-tower`, 50, 1000, 500);
+        const newTower = new Tower(`circle-tower`, 50, 1000, 200);
         this.playerUnits.push(newTower);
         return newTower;
     }
@@ -502,6 +507,7 @@ class Data {
                 // const unitObj = this.enemyUnits[i];
                 // console.log("Calculating new positions...")
                 unitObj.motion.calculateNewPosition();     
+                // console.log(`Offset left:${unitObj.domHandle.offsetLeft} offset top:${unitObj.domHandle.offsetTop}`)
                 this.getTowersInRange(unitObj)    
                 //check if enemies have left the board due to position      
                 if (unitObj.motion.coords[1] >= appData.getBoardDimensions()[1]) {
@@ -535,8 +541,8 @@ class Data {
     getBoardDimensions() {
         const gameBoardWidth = appView.gameBoard.offsetWidth;
         const gameBoardHeight = appView.gameBoard.offsetHeight;
-        const gameBoardOffsetTop = appView.gameBoard.offsetTop;
         const gameBoardOffsetLeft = appView.gameBoard.offsetLeft;
+        const gameBoardOffsetTop = appView.gameBoard.offsetTop;
         return [gameBoardWidth, gameBoardHeight, gameBoardOffsetLeft, gameBoardOffsetTop]
     }
     getLives(change=0) {
@@ -555,7 +561,7 @@ class Data {
         for (let tower of appData.playerUnits) {
             // console.log("tower loop")
             // console.log(tower.originVector)
-            console.log(unitObj.motion.originVector)
+            // console.log(unitObj.motion.originVector)
             const distanceVector = [unitObj.motion.originVector[0] - tower.originVector[0], unitObj.motion.originVector[1] - tower.originVector[1]]
             // console.log(distanceVector);
             const distance = Math.sqrt(distanceVector[0]**2 + distanceVector[1]**2);
@@ -599,7 +605,7 @@ class Unit {
         this.originOffset = [-0.5*this.size[0], -0.5*this.size[1]]; 
         this.style();
         this.motion = new Motion(this.originOffset);
-        this.originVector = []; //vector from the top left corner of the page to the center of the unit
+        // this.originVector = []; //vector from the top left corner of the page to the center of the unit
     }
     style() {
         this.domHandle = document.createElement("div");
@@ -614,7 +620,6 @@ class Unit {
         this.domHandle.style.top = `${appData.getBoardDimensions()[1] * -0.1}px`;
         this.domHandle.addEventListener('click',()=>{this.health -= 55});
         // this.domHandle.style.boxShadow = `0 -5px 5px blue`
-        console.log(`units offset left ${this.domHandle.offsetLeft}offset top ${this.domHandle.offsetTop}`)
     }
     resize() {
         // console.log("Resizing...")
@@ -634,13 +639,29 @@ class Tower {
         this.attackSpeed = attackSpeed;
         this.range = range;
         this.enemiesInRange = [];
-        this.shootInterval = setInterval(this.shoot, this.attackSpeed);
+        console.log(this.enemiesInRange);
+        this.shootInterval = setInterval( ()=>{
+            console.log("Would shoot if enemy in")
+            if (this.enemiesInRange.length > 0) {
+                this.enemiesInRange[0].health -= this.damage;
+                console.log("Shooting!")
+                if (this.enemiesInRange[0].health <= 0) {
+                    appController.setCurrency(this.enemiesInRange[0].bounty)
+                    appView.toRender.splice(appView.toRender.indexOf(this.enemiesInRange[0]),1);
+                    appData.enemyUnits.splice(appData.enemyUnits.indexOf(this.enemiesInRange[0]),1);
+                    appView.activeUnits.splice(appView.activeUnits.indexOf(this.enemiesInRange[0]));
+                    this.enemiesInRange[0].domHandle.remove();
+                    this.enemiesInRange.shift()
+                }
+            }}, this.attackSpeed);
         this.boardDimensions = appData.getBoardDimensions();
         this.style();
     }
     shoot() {
-        if (this.enemiesInRange) {
+        console.log("Would shoot if enemy in")
+        if (this.enemiesInRange.length > 0) {
             this.enemiesInRange[0].health -= this.damage;
+            console.log(this.enemiesInRange)
             console.log("Shooting!")
         }
     }
@@ -653,10 +674,9 @@ class Tower {
         this.originOffset = [-0.5*this.size[0], -0.5*this.size[1]]; 
         this.domHandle.style.width = `${this.size[0]}px`;
         this.domHandle.style.height = `${this.size[1]}px`;
-        console.log(this.domHandle.offsetLeft)
-        console.log(this.originOffset[0])
-        console.log(this.boardDimensions[2])
-        this.originVector = [this.domHandle.offsetLeft + this.originOffset[0] + this.boardDimensions[2],this.domHandle.offsetTop + this.originOffset[1] + this.boardDimensions[2]]
+        // console.log(this.domHandle.offsetLeft)
+        // console.log(this.originOffset[0])
+        // console.log(this.boardDimensions[2])
     }
     resize() {
         let oldBoardDimensions = this.boardDimensions;
@@ -664,6 +684,10 @@ class Tower {
         this.size = [this.proportions[0] * this.boardDimensions[0], this.proportions[1] * this.boardDimensions[1]]; // percentage of game board
         this.domHandle.style.width = `${this.size[0]}px`;
         this.domHandle.style.height = `${this.size[1]}px`;
+    }
+    calculateOriginVector(){
+        this.originVector = [this.domHandle.offsetLeft + -1*this.originOffset[0], this.domHandle.offsetTop + -1*this.originOffset[1]]
+        console.log(this.originVector);
     }
 }
 
