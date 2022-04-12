@@ -94,6 +94,9 @@ class View {
             const newTower = appController.setNewTower()
             event.target.append(newTower.domHandle);
             newTower.calculateOriginVector();
+            // newTower.createProjectile();
+            newTower.coords = [newTower.domHandle.offsetLeft, newTower.domHandle.offsetTop];
+            console.log(newTower.coords)
 
             
             // event.target.classList.toggle("circle-tower")
@@ -136,6 +139,7 @@ class View {
     //uses an update keyword
     viewMainLoop(){
         // console.log("view main loop");
+        // console.log(this.toRender)
         for (let i = 0; i < this.toRender.length; i++) {
             this.render(this.toRender[i]);
         }
@@ -167,10 +171,14 @@ class View {
         this.gameBoard.append(obj.domHandle);
         // console.log(obj.domHandle);
         this.activeUnits.push(obj);
+        console.log(`pushing new unit: ${obj.name}`)
+        this.toRender.push(obj);
+    }
+    updateProjectile(obj) {
         this.toRender.push(obj);
     }
     updatePosition(obj) {
-        //handle must be a document query selector
+        // console.log(obj)
         // console.log(obj)
         const xCoord = obj.motion.coords[0];
         const yCoord = obj.motion.coords[1];
@@ -419,7 +427,7 @@ class Data {
     constructor() {
         this.wave = 1;
         this.units = 1;
-        this.lives = 30;
+        this.lives = 3;
         this.timer = appController.timerValue;
         this.timerActive = false;
         this.timerInterval = setInterval(() => {
@@ -443,12 +451,14 @@ class Data {
         this.income = 50;
         this.playerUnits = [];
         this.enemyUnits = [];
+        this.projectiles = [];
         this.gameBoardDimensions = this.getBoardDimensions();
         this.towerNumber = 1;
     }
     reset() {
         this.wave = 1;
         this.units = 10;
+        this.unitNumber = 0;
         this.lives = 30;
         this.timer = appController.timerValue;
         this.timerActive = false;
@@ -462,6 +472,7 @@ class Data {
     dataMainLoop(){
         // console.log('Data main loop')
         this.getNewEnemyPositions();  
+        this.getNewProjectilePositions();
     };
     getScoreBoardData() {
         // console.log("Getting data...")
@@ -489,7 +500,7 @@ class Data {
         return this.timer;
     }
     getNewUnit() {
-        const newUnit = new Unit (this.wave, this.enemyUnits.length + 1);
+        const newUnit = new Unit (this.wave, ++this.unitNumber);
         this.enemyUnits.push(newUnit);
         appController.timeOuts.shift();
         return newUnit;
@@ -500,13 +511,12 @@ class Data {
         this.towerNumber++;
         return newTower;
     }
-    getTowerAttacks() {
+    getTowerAttacks() { 
         //iterate through 
     }
     getNewEnemyPositions(){
-        if (appController.state != "game-over"){    
-            const toRemove = [];
-            console.log(this.enemyUnits);
+        if (appController.state != "game-over"){  
+            // console.log(this.enemyUnits);
             for (let unitObj of this.enemyUnits) {
                 // const unitObj = this.enemyUnits[i];
                 // console.log("Calculating new positions...")
@@ -535,10 +545,21 @@ class Data {
             }
         }
     }
+    getNewProjectilePositions() {
+        if (appController.state != "game-over"){   
+            // console.log(this.projectiles)
+            for (let projectile of this.projectiles) {
+                // console.log(projectile.target)
+                projectile.motion.calculateNewDirection(projectile.target.motion.coords);
+                projectile.motion.calculateNewPosition();
+            }
+        } 
+    }
     getWave(condition) {
         switch (condition) {
             case "next":
                 this.wave++;
+                this.unitNumber = 0;
                 break; 
         }
     }
@@ -599,15 +620,37 @@ class Motion {
         // console.log(this.coords);
         this.originVector = [this.coords[0]+this.boardDimensions[2], this.coords[1]+this.boardDimensions[3]];
     }
+    calculateNewDirection(targetCoords) {
+        const distanceVector = [targetCoords[0] + this.boardDimensions[2] - this.coords[0], targetCoords[1] + this.boardDimensions[3] - this.coords[1]];
+        const magnitude = Math.sqrt(distanceVector[0]**2 + distanceVector[1]**2)
+        this.direction = [distanceVector[0] / magnitude, distanceVector[1] / magnitude]
+        // console.log(Math.sqrt(this.direction[0]**2 + this.direction[1]**2)); 
+        console.log(this.direction);
+    }
 }
 class Projectile {
-    constructor() {
-        this.proportions = [0.01, 0.03];
+    constructor(towerOrigin, targetUnit) {
+        this.target = targetUnit;
+        this.towerOrigin = towerOrigin;
+        this.proportions = [0.01, 0.015];
         this.size = [this.proportions[0] * appView.gameBoard.offsetWidth, this.proportions[1] * appView.gameBoard.offsetHeight]; // percentage of game board
-        this.motion = new Motion();
+        this.originOffset = [-1*this.size[0] /2, -1*this.size[1]/2]
+        // this.originOffset = [0,0]
+        this.motion = new Motion(this.originOffset);
+        this.motion.speed = 20;
+        this.style();
     }
     style() {
         this.domHandle = document.createElement("div");
+        this.domHandle.style.width = `${this.size[0]}px`;
+        this.domHandle.style.height = `${this.size[1]}px`;
+        this.domHandle.style.position = "absolute";
+        this.domHandle.style.backgroundColor = "red";
+        this.domHandle.style.borderRadius = "50%";
+        this.domHandle.style.zIndex = 3;
+        this.motion.coords = [this.towerOrigin[0]+this.originOffset[0],this.towerOrigin[1]+this.originOffset[1]];
+        this.domHandle.style.left = `${this.towerOrigin[0]+this.originOffset[0]}px`;
+        this.domHandle.style.top = `${this.towerOrigin[1]+this.originOffset[1]}px`;
         // this.domHandle.classList.add(`${this.name}`);
     }
 }
@@ -626,10 +669,11 @@ class Unit {
     style() {
         this.domHandle = document.createElement("div");
         this.domHandle.classList.add(`${this.name}`);
+        //TODO add class of "unit" -> health bar structure 
         this.domHandle.style.width = `${this.size[0]}px`;
         this.domHandle.style.height = `${this.size[1]}px`;
         this.domHandle.style.position = "absolute";
-        this.domHandle.style.backgroundColor = "blue";
+        this.domHandle.style.backgroundColor = "blue"; //give health bar its specific color depending on health;
         this.domHandle.style.borderRadius = "50%";
         this.domHandle.style.zIndex = 2;
         this.domHandle.style.left = `${appData.getBoardDimensions()[1]/2}px`;
@@ -660,8 +704,17 @@ class Tower {
             console.log("Would shoot if enemy in")
             if (this.enemiesInRange.length > 0) {
                 const firstEnemy = this.enemiesInRange[0]
+                //Change to when the projectile hits the target
                 firstEnemy.health -= this.damage;
+                //create projectile 
+                console.log("creating new projectile")
+                const newProjectile = this.createProjectile(firstEnemy); 
+                if (!appView.toRender.includes(newProjectile)) {
+                    appView.updateProjectile(newProjectile);
+                }
+                
                 console.log("Shooting!")
+                console.log(firstEnemy.health)
                 if (firstEnemy.health <= 0) {
                     // unit in mutiple enemies in range array... when this condition occurs, each tower removes 1 enemy from array
                     appController.setCurrency(this.enemiesInRange[0].bounty)
@@ -679,6 +732,8 @@ class Tower {
             }}, this.attackSpeed);
         this.boardDimensions = appData.getBoardDimensions();
         this.style();
+        this.coords = [];
+        // this.createProjectile();
     }
     shoot() {
         console.log("Would shoot if enemy in")
@@ -711,6 +766,13 @@ class Tower {
     calculateOriginVector(){
         this.originVector = [this.domHandle.offsetLeft + -1*this.originOffset[0], this.domHandle.offsetTop + -1*this.originOffset[1]]
         console.log(this.originVector);
+    }
+    createProjectile(targetUnit) {
+        console.log("creating new projectile")
+        const newProjectile = new Projectile(this.originVector, targetUnit);
+        appData.projectiles.push(newProjectile);
+        this.domHandle.append(newProjectile.domHandle);
+        return newProjectile;
     }
 }
 
